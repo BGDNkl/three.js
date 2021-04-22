@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Watch</title>
+	<meta charset="utf-8">
+</head>
+	<body>
+		<script src="../js/build/Three.js"></script>
+		<script src="../js/build/OrbitControls.js"></script>
+		<script src="../js/build/Detector.js"></script>
+		<script src="../js/build/stats.js"></script>
+		<script src="../js/build/THREEx.FullScreen.js"></script>
+		<script src="../js/build/THREEx.WindowResize.js"></script>
+		<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+		<script>
+	
+	//	[Variables]
+	
+		// variables for renderer
+			var container, renderer;
+
+		// stats.js
+			var stats = new Stats();
+			stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+			stats.domElement.style.bottom = '0';
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.zIndex = 100;
+			document.body.appendChild( stats.domElement );
+
+
+	//	[Scene]
+    var scene = new THREE.Scene();
+	
+	
+	//	[Main camera]
+	var camera = new THREE.PerspectiveCamera(71, window.innerWidth / window.innerHeight, 1, 10000);
+	scene.add(camera);
+	
+	
+	//	[Renderer]
+	if ( Detector.webgl )
+		renderer = new THREE.WebGLRenderer( {antialias:true} );
+	else
+		renderer = new THREE.CanvasRenderer(); 
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		container = document.getElementById( 'ThreeJS' );
+		container.appendChild( renderer.domElement );
+		
+	
+	//	[Windows events]
+	THREEx.WindowResize(renderer, camera);
+	
+	
+	//	[OrbitControls]
+	var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+
+	
+	//	[Lights]
+    var ambientLight = new THREE.AmbientLight(0xf1f1f1);
+    scene.add(ambientLight);
+
+	var spotLight = new THREE.DirectionalLight("white", 0.75);
+	spotLight.position.set(0, 50, 15);
+    scene.add(spotLight);
+	
+
+	//	[Watch]
+	
+		// корпус
+		var geometry_dial = new THREE.CylinderBufferGeometry(20, 21, 4, 48, 1, false);
+		var materialsDial = 
+		[
+			new THREE.MeshStandardMaterial( {color: "white"} ), 
+			new THREE.MeshStandardMaterial( {map: new THREE.TextureLoader().load("clock_face.jpg"), side: THREE.FrontSide} ), 
+			new THREE.MeshStandardMaterial( {color: "white"} )  
+		];
+		var dial      	  = new THREE.Mesh(geometry_dial, materialsDial);	
+		
+		// стрелка секунд
+		<!-- var geometry_second = new THREE.BoxBufferGeometry(15, 1, 1); -->
+		var geometry_second = new THREE.SphereBufferGeometry( 1, 32, 32 );
+		geometry_second.applyMatrix( new THREE.Matrix4().makeTranslation(17.6,0,0));
+		var second   	    = new THREE.Mesh(geometry_second, new THREE.MeshStandardMaterial({color: 0xcc0000}));
+		
+		// стрелка минут
+		var geometry_minute = new THREE.BoxBufferGeometry(12, 0.35, 1.15);
+		geometry_minute.applyMatrix( new THREE.Matrix4().makeTranslation(5,0,0));
+		var minute   	    = new THREE.Mesh(geometry_minute, new THREE.MeshStandardMaterial({color: 0x00264d }));
+
+		// стрелка часов
+		var geometry_hour = new THREE.BoxBufferGeometry(10, 0.35, 1.6);
+		geometry_hour.applyMatrix( new THREE.Matrix4().makeTranslation(5,0,0));
+		var hour      	  = new THREE.Mesh(geometry_hour, new THREE.MeshStandardMaterial({color: 0x0073e6}));
+
+		// скрепляющая ось, я хз
+		var geometry_dot = new THREE.CylinderBufferGeometry(1.21, 1.21, 1, 48);
+		var dot   	    = new THREE.Mesh(geometry_dot, new THREE.MeshStandardMaterial({color: "black" }));
+		
+		// группа, в нее добавлю все обьекты (корпус, стрелки) чтобы их "склеить" и потом удобно вращать
+		var ClockGroup = new THREE.Group();
+		
+		// Positions
+		dial.position.x   = 0;
+		dial.position.y   = -3;
+		dial.position.z   = 0;
+		
+		second.position.x = 0;
+		second.position.y = 0;
+		second.position.z = 0;
+
+		minute.position.x = 0;
+		minute.position.y = -0.5;
+		minute.position.z = 0;
+
+		hour.position.x   = 0;
+		hour.position.y   = -0.15;
+		hour.position.z   = 0;
+
+		dot.position.y = -0.4;
+		
+		camera.position.z = 40;
+		camera.position.y = 40;
+		camera.lookAt(dial.position);
+
+
+		// Build World
+		ClockGroup.add( dial );
+		ClockGroup.add( second );
+		ClockGroup.add( minute );
+		ClockGroup.add( hour );
+		ClockGroup.add( dot );
+		scene.add( ClockGroup );
+		
+		ClockGroup.rotation.x = 1;
+		ClockGroup.rotation.y = 1.56;
+
+
+//	[		F	U 	N	C	T	I	O	N	S		]
+
+
+function update()
+{	
+	
+	// Set initial time
+	var now = new Date();
+	hour.rotation.y   = -((Math.PI * 2) * (now.getHours()   / 12.0))
+	minute.rotation.y = -((Math.PI * 2) * (now.getMinutes() / 60.0))
+	second.rotation.y = -((Math.PI * 2) * (now.getSeconds() / 60.0))
+}
+
+
+function animate() 
+{
+    requestAnimationFrame( animate );
+	render();	
+	update();
+}
+
+
+function render()  
+{
+	renderer.render( scene, camera );  
+	
+	// stats
+	stats.update();
+};
+animate();
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>materials/lights/shadows</title>
+	<meta charset="utf-8">
+	</head>
+	<body>
+		<script src="../js/build/Three.js"></script>
+		<script src="../js/build/OrbitControls.js"></script>
+		<script src="../js/build/THREEx.KeyboardState.js"></script>
+		<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+		<script>
+	
+	// Scene
+    var scene = new THREE.Scene();
+	
+	
+	// Camera 
+	var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000); 
+    scene.add(camera);
+    camera.position.set(0, -26, 21);
+	camera.lookAt(scene.position);
+	
+	
+	// Renderer
+	var renderer = new THREE.WebGLRenderer();
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.domElement);
+	
+	// Orbits
+	var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+	orbitControls.minDistance = 5; 			//  limit min distance of the scroll camera;
+    orbitControls.maxDistance = 75;			//  limit max distance of the scroll camera;
+	
+	
+	// Objects:
+
+//-----[Box]-----------------------------------------------------------------------------------------------------------------------------
+	var geometrySB = new THREE.CubeGeometry(100, 100, 100);
+	var materialsSB = 
+	[
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox.jpg"), side: THREE.DoubleSide}),
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox.jpg"), side: THREE.DoubleSide}),
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox.jpg"), side: THREE.DoubleSide}),
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox.jpg"), side: THREE.DoubleSide}),
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox.jpg"), side: THREE.DoubleSide}),
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox.jpg"), side: THREE.DoubleSide})
+	];
+	var materialSB = new THREE.MeshPhongMaterial(materialsSB);
+	<!-- var materialSB = new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load(""), side: THREE.DoubleSide}); -->
+	var Cube = new THREE.Mesh(geometrySB, materialSB);
+//	Cube.position.z = 100;
+	scene.add(Cube);
+
+	
+//-----[plane1]--(MeshBasicMaterial)-----------------------------------------------------------------------------------------------------
+	var geometry1 = new THREE.PlaneBufferGeometry( 10, 31, 1, 1 );
+	var material1 = new THREE.MeshBasicMaterial( {color: /*0xadd5f7*/"white", /*map: THREE.Grass,*/ /*color: "blue",*/ side: THREE.DoubleSide} );
+	var plane1 = new THREE.Mesh( geometry1, material1 );
+	plane1.castShadow = false;				// shadow
+	plane1.receiveShadow = true;			// shadow
+  	scene.add( plane1 );
+	plane1.position.set(-15, 0, 0);
+//----[object1]--------------------------------------------------------------------------------------------------------------------------
+	var building1 = new THREE.Mesh( new THREE.BoxBufferGeometry( 6, 6, 8), new THREE.MeshBasicMaterial({color: 0xf2b134}) );
+	scene.add(building1);
+	building1.position.set(-15, 0, 4.01);
+	building1.castShadow = true;			// shadow
+	building1.receiveShadow = false;		// shadow	
+	
+
+//-----[plane2]--(MeshPhongMaterial)-----------------------------------------------------------------------------------------------------
+	var geometry1 = new THREE.PlaneBufferGeometry( 10, 31, 1, 1 );
+	var material1 = new THREE.MeshPhongMaterial( {color: /*0x347a9a*/"white", side: THREE.DoubleSide} );
+	var plane2 = new THREE.Mesh( geometry1, material1 );
+	plane2.castShadow = false;				// shadow
+	plane2.receiveShadow = true;			// shadow
+  	scene.add( plane2 );
+	plane2.position.set(-5, 0, 0);
+//----[object2]--------------------------------------------------------------------------------------------------------------------------
+	var building2 = new THREE.Mesh( new THREE.BoxBufferGeometry( 6, 6, 8), 
+									new THREE.MeshPhongMaterial(
+										{color: 0xf2b134, 
+//										flatShading: true, 		// not working
+										shininess : 100			// not working
+										}) 
+								   );
+	building2.position.set(-5, 0, 4.01);
+//	building2.reflectivity = 1;				// not working
+	scene.add(building2);
+	building2.castShadow = true;			// shadow
+	building2.receiveShadow = false;		// shadow
+	
+
+//-----[plane3]--(MeshLambertMaterial)---------------------------------------------------------------------------------------------------
+	var geometry1 = new THREE.PlaneBufferGeometry( 10, 31, 1, 1 );
+	var material1 = new THREE.MeshLambertMaterial( {color: /*0x112f41*/"white", side: THREE.DoubleSide} );
+	var plane3 = new THREE.Mesh( geometry1, material1 );
+	plane3.castShadow = false;				// shadow
+	plane3.receiveShadow = true;			// shadow			// (?) dont react to light when enable shadowReceive = true
+  	plane3.receive = true;
+	scene.add( plane3 );
+	plane3.position.set(5, 0, 0);
+//----[object3]--------------------------------------------------------------------------------------------------------------------------
+	var building3 = new THREE.Mesh( new THREE.BoxBufferGeometry( 6, 6, 8), new THREE.MeshLambertMaterial({color: 0xf2b134}) );
+	scene.add(building3);
+	building3.position.set(5, 0, 4.01);
+	building3.castShadow = true;			// shadow
+	building3.receiveShadow = false;		// shadow	
+	
+
+//-----[plane4]--(MeshStandardMaterial)--------------------------------------------------------------------------------------------------
+	var geometry1 = new THREE.PlaneBufferGeometry( 10, 31, 1, 1 );
+	var material1 = new THREE.MeshStandardMaterial( {color: /*0x112f41*/"white", side: THREE.DoubleSide, roughness: 0, metalness: 0.12} );
+	var plane4 = new THREE.Mesh( geometry1, material1 );
+	plane4.castShadow = false;				// shadow
+	plane4.receiveShadow = true;			// shadow
+	plane4.receive = true;					// shadow
+  	scene.add( plane4 );
+	plane4.position.set(15, 0, 0);
+//----[object4]--------------------------------------------------------------------------------------------------------------------------
+	var building4 = new THREE.Mesh( new THREE.BoxBufferGeometry( 6, 6, 8), new THREE.MeshStandardMaterial({color: 0xf2b134}) );
+	scene.add(building4);
+	building4.position.set(15, 0, 4.01);
+	building4.castShadow = true;			// shadow
+	building4.receiveShadow = false;		// shadow	
+	
+	
+
+//----[text1]-----------------------------------------------------------------------------------------------------------------------------
+	var fontLoader = new THREE.FontLoader();
+	fontLoader.load("helvetiker_regular.typeface.json",function(tex){ 
+		var  textGeo = new THREE.TextGeometry('BasicMaterial', {
+				size: 0.8,
+				height: 0.1,
+				curveSegments: 6,
+				font: tex,
+			});
+		var  color = new THREE.Color();
+		color.setRGB(255, 250, 250);
+		var  textMaterial = new THREE.MeshBasicMaterial({ color: "black" });
+		var  text = new THREE.Mesh(textGeo , textMaterial);
+    scene.add(text);
+	
+	text.position.set(-18.5, -15, 0);
+	})
+	
+	
+//----[text2]-----------------------------------------------------------------------------------------------------------------------------
+	var fontLoader = new THREE.FontLoader();
+	fontLoader.load("helvetiker_regular.typeface.json",function(tex){ 
+		var  textGeo = new THREE.TextGeometry('PhongMaterial', {
+				size: 0.8,
+				height: 0.1,
+				curveSegments: 3,
+				font: tex,
+			});
+		var  color = new THREE.Color();
+		color.setRGB(255, 250, 250);
+		var  textMaterial = new THREE.MeshBasicMaterial({ color: "white" });
+		var  text = new THREE.Mesh(textGeo , textMaterial);
+    scene.add(text);
+	
+	text.position.set(-8.5, -15, 0);
+	})
+
+//----[text3]-----------------------------------------------------------------------------------------------------------------------------
+	var fontLoader = new THREE.FontLoader();
+	fontLoader.load("helvetiker_regular.typeface.json",function(tex){ 
+		var  textGeo = new THREE.TextGeometry('LambertMaterial', {
+				size: 0.8,
+				height: 0.1,
+				curveSegments: 6,
+				font: tex,
+			});
+		var  color = new THREE.Color();
+		color.setRGB(255, 250, 250);
+		var  textMaterial = new THREE.MeshBasicMaterial({ color: "white" });
+		var  text = new THREE.Mesh(textGeo , textMaterial);
+    scene.add(text);
+	
+	text.position.set(1, -15, 0);
+	})
+
+//----[text4]-----------------------------------------------------------------------------------------------------------------------------
+	var fontLoader = new THREE.FontLoader();
+	fontLoader.load("helvetiker_regular.typeface.json",function(tex){ 
+		var  textGeo = new THREE.TextGeometry('StandardMaterial', {
+				size: 0.8,
+				height: 0.1,
+				curveSegments: 6,
+				font: tex,
+			});
+		var  color = new THREE.Color();
+		color.setRGB(255, 250, 250);
+		var  textMaterial = new THREE.MeshBasicMaterial({ color: "white" });
+		var  text = new THREE.Mesh(textGeo , textMaterial);
+    scene.add(text);
+	
+	text.position.set(11, -15, 0);
+	})	
+	
+	
+	// Shadow
+//	renderer.shadowMapEnabled = true;
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+	
+	
+	// Lights
+	//Освещение сцены
+    var ambientLight = new THREE.AmbientLight("white", 0.1);
+    scene.add(ambientLight);
+	
+	
+	<!-- //Освещение, чтобы улучшить вид сцены -->
+	<!-- var spotLight = new THREE.DirectionalLight("white"); -->
+    <!-- spotLight.position.set(0 ,-30, 41); -->
+    <!-- scene.add(spotLight); -->
+
+	
+	// Sun and Lights
+//-----sun---------------------------------------------------------------------------------------------------
+	var sunGroup = new THREE.Group();
+	
+	var sunPointLight = new THREE.SpotLight( "orange", 100, 64);
+//	var sunPointLight = new THREE.PointLight( "white", 14 , 100);
+	sunPointLight.position.set(0, 0, 0); 
+	sunPointLight.castShadow = true;
+//	sunPointLight.target = building;
+//	sunPointLight.shadow = new THREE.LightShadow(new THREE.PerspectiveCamera(100, 1, 1000, 1000));
+	sunPointLight.shadowCameraNear = 0.2;
+	sunPointLight.shadowCameraFar = 25;
+	sunPointLight.shadowDarkness = 0.5;		//(?)
+	
+    var sunGeometry = new THREE.SphereGeometry(2.5, 50, 50);
+	var sunMaterial = new THREE.MeshBasicMaterial({ color: "yellow" });					// yellow sun
+	var sunLight = new THREE.Mesh(sunGeometry, sunMaterial);
+	sunLight.position.set(0, 0, 0);
+	sunLight.rotation.x = 1.5; 				// vinz - vverh
+	sunLight.rotation.y = -1.2;				// naklon lewo - prawo
+//	sunLight.rotation.z = -1.5; 			// nazad - vpered
+
+	sunGroup.add (sunPointLight);
+	sunGroup.add (sunLight);
+	scene.add(sunGroup); 
+	sunGroup.position.set(0, 0, -10);		// dla statyki, kiedy wylaczam animation w render
+//-----------------------------------------------------------------------------------------------------------	
+	
+//-----blue light--------------------------------------------------------------------------------------------	
+	var light1Group = new THREE.Group();
+	
+	var blueLight = new THREE.PointLight("blue", 10, 10);
+	scene.add(blueLight);
+	blueLight.castShadow = true;
+	blueLight.shadow.camera.near = 1;
+	blueLight.shadow.camera.far = 25;
+	blueLight.shadow.camera.fov = 30;
+	<!-- blueLight.shadow.mapSize.width = 10; -->
+	<!-- blueLight.shadow.mapSize.height = 10; -->
+//	blueLight.shadowBias = -0.003;
+	
+	var light1Geometry = new THREE.SphereGeometry(1, 15, 15);
+//	var light1Material = new THREE.MeshPhongMaterial({ color: "blue", shininess: 100});	
+	var light1Material = new THREE.MeshBasicMaterial({ color: "blue"});		
+	var light1Light = new THREE.Mesh(light1Geometry, light1Material);
+	
+	light1Group.add (blueLight);
+	light1Group.add (light1Light);
+	scene.add(light1Group);  
+	light1Group.position.set(0, 0, 3.5);
+	
+
+	<!-- light1Light.castShadow = true;			// shadow -->
+	<!-- light1Light.receiveShadow = false;		// shadow -->
+//-----------------------------------------------------------------------------------------------------------	
+
+//-----red light---------------------------------------------------------------------------------------------	
+	var light2Group = new THREE.Group();
+	
+	var redLight = new THREE.PointLight("red", 10, 10);
+	scene.add(redLight);
+	redLight.castShadow = true;
+	redLight.shadow.camera.near = 1;
+	redLight.shadow.camera.far = 25;
+	redLight.shadow.camera.fov = 30;
+	
+	var light2Geometry = new THREE.SphereGeometry(1, 15, 15);
+//	var light2Material = new THREE.MeshPhongMaterial({ color: "red" });
+	var light2Material = new THREE.MeshBasicMaterial({ color: "red" });	// parametry				
+	var light2Light = new THREE.Mesh(light2Geometry, light2Material);
+	
+	light2Group.add (redLight);
+	light2Group.add (light2Light);
+	scene.add(light2Group); 
+	light2Group.position.set(10, 0, 3.5);
+	
+	light2Group.castShadow = false;			// shadow
+	light2Group.receiveShadow = false;		// shadow
+//-----------------------------------------------------------------------------------------------------------
+	
+//-----green light-------------------------------------------------------------------------------------------
+	var light3Group = new THREE.Group();
+	
+	var greenLight = new THREE.PointLight("green", 10, 10);
+	scene.add(greenLight);
+	greenLight.castShadow = true;
+	greenLight.shadow.camera.near = 1;
+	greenLight.shadow.camera.far = 25;
+	greenLight.shadow.camera.fov = 100;
+	
+	var light3Geometry = new THREE.SphereGeometry(1, 15, 15);
+//	var light3Material = new THREE.MeshPhongMaterial({ color: "green" });
+	var light3Material = new THREE.MeshBasicMaterial({ color: "green" });	
+	var light3Light = new THREE.Mesh(light3Geometry, light3Material);
+	
+	light3Group.add (greenLight);
+	light3Group.add (light3Light);
+	scene.add(light3Group); 
+	light3Group.position.set(-10, 0, 3.5);
+	
+	light3Light.castShadow = false;			// shadow
+	light3Light.receiveShadow = false;		// shadow
+//-----------------------------------------------------------------------------------------------------------
+
+	
+	// Sun rotation parameters
+	var re = 45;
+	var thetae = 0;
+    var dThetae = -2 * Math.PI / 150;
+	
+	var time = Date.now() + 0.00005;
+	
+	
+	<!-- update(); -->
+	
+<!-- function update() -->
+<!-- { -->
+
+	
+	
+<!-- } -->
+	
+function animate() 
+{
+    requestAnimationFrame( animate );	
+	render();
+	renderer.render( scene, camera );
+	
+}
+
+
+function render()  
+{
+	thetae += dThetae;
+
+	sunGroup.position.x = re * Math.cos(thetae);
+//	sunGroup.position.y = re * Math.sin(thetae);
+	sunGroup.position.z = re * Math.sin(thetae);
+
+	<!-- blueLight.position.x = Math.sin( time * 0.7 ) * 30; -->
+	
+	<!-- light1Group.rotateZ(0.01); -->
+	
+	<!-- blueLight.position.x = Math.sin( time * 0.7 ) * 30; -->
+	<!-- blueLight.position.y = Math.sin( time * 0.5 ) * 40; -->
+	<!-- blueLight.position.z = Math.sin( time * 0.3 ) * 30; -->
+	
+	<!-- redLight.position.x = Math.sin( time * 0.3 ) * 30; -->
+	<!-- redLight.position.y = Math.sin( time * 0.5 ) * 40; -->
+	<!-- redLight.position.z = Math.sin( time * 0.7 ) * 30; -->
+	
+	<!-- greenLight.position.x = Math.sin( time * 0.7 ) * 30; -->
+	<!-- greenLight.position.y = Math.sin( time * 0.5 ) * 40; -->
+	<!-- greenLight.position.z = Math.sin( time * 0.3 ) * 30; -->
+};
+
+	animate();
+    </script>
+  </body>
+</html>
+<!-- 
+SpotLight( color : Integer, intensity : Float, distance : Float, angle : Radians, penumbra : Float, decay : Float )
+color - (optional) hexadecimal color of the light. Default is 0xffffff (white).
+intensity - (optional) numeric value of the light's strength/intensity. Default is 1.
+
+distance - Maximum range of the light. Default is 0 (no limit).
+angle - Maximum angle of light dispersion from its direction whose upper bound is Math.PI/2.
+penumbra - Percent of the spotlight cone that is attenuated due to penumbra. Takes values between zero and 1. Default is zero.
+decay - The amount the light dims along the distance of the light.
+-->

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>steelness, pinkLambert</title>
+	<meta charset="utf-8">
+</head>
+	<body>
+		<script src="../js/build/Three.js"></script>
+		<script src="../js/build/OrbitControls.js"></script>
+		<!-- <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div> -->
+		<script>
+
+//-----[Scene]---------------------------------------------------------------------------------------------------------------------------------------
+    var scene = new THREE.Scene();
+	
+	
+//-----[Camera]--------------------------------------------------------------------------------------------------------------------------------------
+	var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 4700); 
+    scene.add(camera);
+    camera.position.set(0, 125, 200);
+	camera.lookAt(scene.position);
+
+
+//-----[Renderer]------------------------------------------------------------------------------------------------------------------------------------
+	var renderer = new THREE.WebGLRenderer();
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.domElement);
+	
+	
+//-----[Orbits]--------------------------------------------------------------------------------------------------------------------------------------
+	var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+	orbitControls.minDistance = 91; 										//  limit min distance of the scroll camera;
+	orbitControls.maxDistance = 900;										//  limit max distance of the scroll camera;
+	
+
+//-----[Objects: ]-----------------------------------------------------------------------------------------------------------------------------------
+
+//-----[SkyBox]--------------------------------------------------------------------------------------------------------------------------------------
+	var geometrySB = new THREE.CubeGeometry(4000, 4000, 4000);
+	var materialsSB = 
+	[
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_rt.png"), side: THREE.BackSide}), // px
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_lf.png"), side: THREE.BackSide}), // nx
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_up.png"), side: THREE.BackSide}), // py
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_dn.png"), side: THREE.BackSide}), // ny
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_bk.png"), side: THREE.BackSide}), // nz
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_ft.png"), side: THREE.BackSide})  // pz
+	];
+//	var materialSB = new THREE.MeshFaceMaterial(materialsSB);
+	var Cube = new THREE.Mesh(geometrySB, materialsSB);
+	scene.add(Cube);
+
+
+	
+	
+//-----[Lights]----------------------------------------------------------------------------------------------
+	//(Освещение сцены)
+    var ambientLight = new THREE.AmbientLight("white", 0.8);
+    scene.add(ambientLight);
+	
+
+	// point light
+	var light1Group = new THREE.Group();
+	
+	var spotLight = new THREE.PointLight("white", 0.5);
+ 
+ 	var light1Geometry = new THREE.SphereGeometry(7.5, 15, 15);	
+	var light1Material = new THREE.MeshBasicMaterial({ color: "white"});		
+	var light1Light = new THREE.Mesh(light1Geometry, light1Material);
+	
+	light1Group.add (spotLight);
+	light1Group.add (light1Light);
+	scene.add(light1Group);  
+	light1Group.position.set(0, 0, 150);
+ 
+//-----[Objects]----------------------------------------------------------------------------------------------
+
+	// pink lambert
+	var material1 = new THREE.MeshLambertMaterial ({
+		color: 0xf3ffe2,
+		emissive: 0xff0000
+	});
+//	var geometry = new THREE.BoxBufferGeometry (5,5,5);
+	var box1 = new THREE.Mesh( new THREE.BoxBufferGeometry (75, 75, 75) , material1);
+	box1.position.set(-50, 0, 0);
+	scene.add(box1);
+	
+	
+	// metal etc
+	var material2 = new THREE.MeshStandardMaterial({
+		color: 0xf3ffe2,
+		roughness: 0.5,
+		metalness: 0.9
+		});
+	var box2 = new THREE.Mesh( new THREE.BoxBufferGeometry (75, 75, 75) , material2);
+	box2.position.set(50, 0, 0);
+	scene.add(box2);
+	
+	
+	animate();
+
+
+function animate()
+{
+	requestAnimationFrame( animate );
+	render();
+}
+
+
+function render() 
+{
+
+	renderer.render( scene, camera );
+	
+}
+	
+    </script>
+  </body>
+</html>

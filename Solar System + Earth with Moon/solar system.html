@@ -1,0 +1,372 @@
+<!--------------------------------------------------
+	Sphere and rotation
+ -------------------------------------------------->
+<html>
+  <head>
+    <title>Solar System</title>
+    <style>
+      body { margin: 0; background-color: black;}
+      canvas { width: 100%; height: 100% }
+    </style>
+  </head>
+  <body>
+    <script src="../js/build/three.js"></script>
+	<script src="../js/build/three.min.js"></script>
+	<script src="../js/build/OrbitControls.js"></script>
+    <script>
+	  
+	//Camera, scene, and renderer																							
+	var scene = new THREE.Scene();
+	var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 1, 2000);						
+	scene.add(camera);	
+	camera.position.set(-740, 301, -400);
+
+	var renderer = new THREE.WebGLRenderer({antialias: true});
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.domElement);
+      
+
+	//Orbit Controls
+	var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+	orbitControls.minDistance = 51; 	//  limit min distance of the scroll camera;
+	orbitControls.maxDistance = 990;	//  limit max distance of the scroll camera;
+
+	//Lights
+	var ambientLight = new THREE.AmbientLight(0xf1f1f1);
+	scene.add(ambientLight);
+      
+	
+	//Objects: 
+      
+	// Sun
+	var sunGeometry = new THREE.SphereGeometry(39, 50, 50);
+	var sunMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.ImageUtils.loadTexture("lesson6_sung.gif"),
+		// emissive : "yellow",
+	});
+	var sun = new THREE.Mesh(sunGeometry, sunMaterial);
+	scene.add(sun);
+	  
+	  
+	// Mercury
+	var mercuryGeometry = new THREE.SphereGeometry(5, 50, 50);
+	var mercuryMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.ImageUtils.loadTexture("lesson6_mercury.jpg") 
+	});
+	var mercury = new THREE.Mesh(mercuryGeometry, mercuryMaterial);
+	mercury.position.set(-50,0,0);
+	mercury.rotation.x = -0.5;
+	scene.add(mercury);
+	
+	// Mercury orbit																											
+	var mercuryOrbitGeometry = new THREE.TorusGeometry(50, 0.5, 50, 50);			// 0.75 - transparent orbit line; 	
+	var mercuryOrbitMaterial = new THREE.MeshBasicMaterial({ color: "grey", transparent: true, opacity: 0.75 }); 				
+	var mercuryOrbit = new THREE.Mesh (mercuryOrbitGeometry, mercuryOrbitMaterial);											
+	scene.add(mercuryOrbit);																									
+	mercuryOrbit.rotation.x = 1.58;
+	  
+	  
+	// Venus 
+	var venusGeometry = new THREE.SphereGeometry(6, 50, 50);
+	var venusMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.ImageUtils.loadTexture("lesson6_venus.jpg") 
+	});
+	var venus = new THREE.Mesh(venusGeometry, venusMaterial);
+	venus.position.set(-80,0,0);
+	venus.rotation.x = -0.5;
+	scene.add(venus);
+
+	// Venus orbit
+	var venusOrbitGeometry = new THREE.TorusGeometry(80, 0.5, 50, 50);
+	var venusOrbitMaterial = new THREE.MeshBasicMaterial({ color: "grey", transparent: true, opacity: 0.75 }); 
+	var venusOrbit = new THREE.Mesh (venusOrbitGeometry, venusOrbitMaterial);
+	scene.add(venusOrbit);
+	venusOrbit.rotation.x = 1.58;
+	  
+	  
+	// Earth
+	var earthGeometry = new THREE.SphereGeometry(10, 50, 50);
+	var earthMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.ImageUtils.loadTexture("lesson6_earth.jpg") 
+	});
+	var earth = new THREE.Mesh(earthGeometry, earthMaterial);
+	earth.position.set(-130,0,0);
+	earth.rotation.x = -0.5;														// the position of planets in space; 
+	var earthAxis = new THREE.AxesHelper(21);										// axes of earth (and moon), to show the position of
+	earth.add(earthAxis);															//  planets relative to the Y axis in space;
+	scene.add(earth);																										
+	
+	// Earth orbit
+	var earthOrbitGeometry = new THREE.TorusGeometry(130, 0.5, 50, 50);
+	var earthOrbitMaterial = new THREE.MeshBasicMaterial({ color: "grey", transparent: true, opacity: 0.75 }); 
+	var earthOrbit = new THREE.Mesh (earthOrbitGeometry, earthOrbitMaterial);
+	scene.add(earthOrbit);
+	earthOrbit.rotation.x = 1.58;
+	  
+      
+	// Moon 
+	var moonGeometry = new THREE.SphereGeometry(3.5, 50,50);
+	var moonMaterial = new THREE.MeshPhongMaterial({
+		map: THREE.ImageUtils.loadTexture("lesson6_moon_texture.jpg")
+	});
+	var moon = new THREE.Mesh(moonGeometry, moonMaterial);
+	moon.position.set(-160,0,0);
+	moon.rotation.x = -0.5;
+	var moonAxis = new THREE.AxesHelper(11);
+	moon.add(moonAxis);
+	scene.add(moon);
+	  
+	// connect Moon orbit with Earth
+	var moonOrbit = new THREE.Object3D();											// create Object3D, then connect with it earth, moon etc;
+	earth.add( moonOrbit );
+	moonOrbit.add( moon );
+	// connect Moon orbit line
+	var moonOrbitLineGeometry = new THREE.TorusGeometry(22, 0.5, 50, 50);
+	var moonOrbitLineMaterial = new THREE.MeshBasicMaterial({ color: "grey", transparent: true, opacity: 0.75 }); 
+	var moonOrbitLine = new THREE.Mesh (moonOrbitLineGeometry, moonOrbitLineMaterial);
+	moonOrbit.add( moonOrbitLine );
+	moonOrbitLine.rotation.x = 1.58;
+	  
+	  
+	// Mars
+	var marsGeometry = new THREE.SphereGeometry(9, 50, 50);
+	var marsMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.ImageUtils.loadTexture("lesson6_mars.png") 
+	});
+	var mars = new THREE.Mesh(marsGeometry, marsMaterial);
+	mars.position.set(-190,0,0);
+	mars.rotation.x = -0.5;
+	scene.add(mars);
+	
+	// Mars orbit
+	var marsOrbitGeometry = new THREE.TorusGeometry(190, 0.5, 50, 50);
+	var marsOrbitMaterial = new THREE.MeshBasicMaterial({ color: "grey", transparent: true, opacity: 0.75 }); 
+	var marsOrbit = new THREE.Mesh (marsOrbitGeometry, marsOrbitMaterial);
+	scene.add(marsOrbit);
+	marsOrbit.rotation.x = 1.58;
+	  
+	  
+	// Jupiter
+	var jupiterGeometry = new THREE.SphereGeometry(21, 50, 50);
+	var jupiterMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.ImageUtils.loadTexture("lesson6_jupiter.jpg") 
+	});
+	var jupiter = new THREE.Mesh(jupiterGeometry, jupiterMaterial);
+	jupiter.position.set(-287,0,0);
+	jupiter.rotation.x = -0.5;
+	scene.add(jupiter);
+	
+	// Jupiter orbit
+	var jupiterOrbitGeometry = new THREE.TorusGeometry(287, 0.5, 100, 100);
+	var jupiterOrbitMaterial = new THREE.MeshBasicMaterial({ color: "grey", transparent: true, opacity: 0.75 }); 
+	var jupiterOrbit = new THREE.Mesh (jupiterOrbitGeometry, jupiterOrbitMaterial);
+	scene.add(jupiterOrbit);
+	jupiterOrbit.rotation.x = 1.58;
+	  
+	  
+	// Saturn
+	var saturnGeometry = new THREE.SphereGeometry(21, 50, 50);
+	var saturnMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.ImageUtils.loadTexture("lesson6_saturn.jpg") 
+	});
+	var saturn = new THREE.Mesh(saturnGeometry, saturnMaterial);
+	saturn.position.set(-387,0,0);
+	saturn.rotation.x = -0.5;
+	scene.add(saturn);
+	
+	// Saturn orbit
+	var saturnOrbitGeometry = new THREE.TorusGeometry(387, 0.5, 100, 100);
+	var saturnOrbitMaterial = new THREE.MeshBasicMaterial({ color: "grey", transparent: true, opacity: 0.75 }); 
+	var saturnOrbit = new THREE.Mesh (saturnOrbitGeometry, saturnOrbitMaterial);
+	scene.add(saturnOrbit);
+	saturnOrbit.rotation.x = 1.58;
+
+	// Saturn ring
+	var saturnringGeometry = new THREE.RingGeometry( 26, 43, 50 );
+	var saturnringMaterial = new THREE.MeshBasicMaterial( { color: 0xfeedd3, side: THREE.DoubleSide } );
+	var saturnring = new THREE.Mesh( saturnringGeometry, saturnringMaterial );
+	saturnring.position.set(-387,0,-50);
+	saturnring.rotation.x = 1.1;													// rotating saturn ring; 
+	scene.add( saturnring );
+
+
+	// Uranus
+	var uranusGeometry = new THREE.SphereGeometry(12, 50, 50);
+	var uranusMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.ImageUtils.loadTexture("lesson6_uranus.png") 
+	});
+	var uranus = new THREE.Mesh(uranusGeometry, uranusMaterial);
+	uranus.position.set(-469,0,0);
+	uranus.rotation.x = -0.5;
+	scene.add(uranus);
+	
+	// Uranus orbit
+	var uranusOrbitGeometry = new THREE.TorusGeometry(469, 0.5, 100, 100);
+	var uranusOrbitMaterial = new THREE.MeshBasicMaterial({ color: "grey", transparent: true, opacity: 0.75 }); 
+	var uranusOrbit = new THREE.Mesh (uranusOrbitGeometry, uranusOrbitMaterial);
+	scene.add(uranusOrbit);
+	uranusOrbit.rotation.x = 1.58;
+
+
+	// Neptune
+	var neptuneGeometry = new THREE.SphereGeometry(12, 50, 50);
+	var neptuneMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.ImageUtils.loadTexture("lesson6_neptune.png") 
+	});
+	var neptune = new THREE.Mesh(neptuneGeometry, neptuneMaterial);
+	neptune.position.set(-521,0,-0);
+	neptune.rotation.x = -0.5;
+	scene.add(neptune);
+	
+	// Neptune orbit
+	var neptuneOrbitGeometry = new THREE.TorusGeometry(521, 0.5, 100, 100);
+	var neptuneOrbitMaterial = new THREE.MeshBasicMaterial({ color: "grey", transparent: true, opacity: 0.75 }); 
+	var neptuneOrbit = new THREE.Mesh (neptuneOrbitGeometry, neptuneOrbitMaterial);
+	scene.add(neptuneOrbit);
+	neptuneOrbit.rotation.x = 1.58;
+	  
+	  
+	// Pluto - yep, he will be there ノ( º _ ºノ)
+	var plutoGeometry = new THREE.SphereGeometry(8, 50, 50);
+	var plutoMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.ImageUtils.loadTexture("lesson6_plutof.jpg") 
+	});
+	var pluto = new THREE.Mesh(plutoGeometry, plutoMaterial);
+	pluto.position.set(-570,0,0);
+	pluto.rotation.x = -0.5;
+	scene.add(pluto);
+	
+	// Pluto orbit
+	var plutoOrbitGeometry = new THREE.TorusGeometry(560, 0.5, 100, 100);
+	var plutoOrbitMaterial = new THREE.MeshBasicMaterial({ color: "grey", transparent: true, opacity: 0.75 }); 
+	var plutoOrbit = new THREE.Mesh (plutoOrbitGeometry, plutoOrbitMaterial);
+	scene.add(plutoOrbit);
+	plutoOrbit.rotation.x = 1.58;
+
+	  
+	// Stars
+	var starGeometry = new THREE.SphereGeometry(1000, 50, 50);						// "background";
+	var starMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.ImageUtils.loadTexture("lesson6_starfield.png"),
+		side: THREE.BackSide
+	});
+	var starField = new THREE.Mesh(starGeometry, starMaterial);
+	scene.add(starField);
+
+
+	//Camera vector
+	var earthVec = new THREE.Vector3(0, 0, 0);										// camera.lookAt(earthVec);
+	  	  	
+	//Radius and speed:  
+	var rmc = 50;
+	var rv = 80;
+	var re = 130;
+	var rmn = 22;
+	var rm = 190;
+	var rj = 287;
+	var rs = 387;
+	var ru = 469;
+	var rn = 521;
+	var rp = 560;
+
+	var thetamc = 0;
+	var dThetamc = -2 * Math.PI / 1300;
+
+	var thetav = 30;
+	var dThetav = -2 * Math.PI / 1700;
+
+	var thetae = 60;
+	var dThetae = -2 * Math.PI / 2000;
+
+	var theta = 90;
+	var dTheta = -2 * Math.PI / 2000;
+
+	var thetam = 120;
+	var dThetam = -2 * Math.PI / 3000;
+
+	var thetaj = 150;
+	var dThetaj = -2 * Math.PI / 4500;
+
+	var thetas = 180;
+	var dThetas = -2 * Math.PI / 5500;
+
+	var thetau = 210;
+	var dThetau = -2 * Math.PI / 7500;
+
+	var thetan = 240;
+	var dThetan = -2 * Math.PI / 8000;
+
+	var thetap = 270;
+	var dThetap = -2 * Math.PI / 9000;
+
+	//Render loop
+	var render = function() 
+	{
+		// Orbits: 
+		thetamc += dThetamc;
+		thetav += dThetav;
+		thetae += dThetae;
+		theta += dTheta;
+		thetam += dThetam;
+		thetaj += dThetaj;
+		thetas += dThetas;
+		thetau += dThetau;
+		thetan += dThetan;
+		thetap += dThetap;
+
+		mercury.position.x = rmc * Math.cos(thetamc);
+		mercury.position.z = rmc * Math.sin(thetamc);
+
+		venus.position.x = rv * Math.cos(thetav);
+		venus.position.z = rv * Math.sin(thetav);
+
+		earth.position.x = re * Math.cos(thetae);
+		earth.position.z = re * Math.sin(thetae);
+
+		moon.position.x = rmn * Math.cos(theta);
+		moon.position.z = rmn * Math.sin(theta);
+		moon.rotation.y = 0;
+
+		mars.position.x = rm * Math.cos(thetam);
+		mars.position.z = rm * Math.sin(thetam);
+
+		jupiter.position.x = rj * Math.cos(thetaj);
+		jupiter.position.z = rj * Math.sin(thetaj);
+
+		saturn.position.x = rs * Math.cos(thetas);
+		saturn.position.z = rs * Math.sin(thetas);
+
+		saturnring.position.x = rs * Math.cos(thetas);
+		saturnring.position.z = rs * Math.sin(thetas);
+
+		uranus.position.x = ru * Math.cos(thetau);
+		uranus.position.z = ru * Math.sin(thetau);
+
+		neptune.position.x = rn * Math.cos(thetan);
+		neptune.position.z = rn * Math.sin(thetan);
+
+		pluto.position.x = rp * Math.cos(thetap);
+		pluto.position.z = rp * Math.sin(thetap);
+
+		sun.rotateY(0.001);
+		mercury.rotateY(0.015);
+		venus.rotateY(0.015);
+		earth.rotateY(0.015);
+		mars.rotateY(0.015);
+		jupiter.rotateY(0.015);
+		saturn.rotateY(0.015);
+		saturnring.rotateZ(-0.015);
+		uranus.rotateY(0.015);
+		neptune.rotateY(0.015);
+		pluto.rotateY(0.015);
+		starField.rotateY(-0.0005);
+
+		camera.lookAt(earthVec);
+		renderer.render(scene, camera);
+		requestAnimationFrame(render);
+	};
+	
+	render();
+	</script>
+  </body>
+</html>

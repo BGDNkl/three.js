@@ -1,0 +1,1732 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Project: Intersection</title>
+	<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel=stylesheet href="css/base.css"/>
+	<style>
+		#overlay {
+		  position: fixed;
+		  display: none;
+		  width: 100%;
+		  height: 100%;
+		  top: 0;
+		  left: 0;
+		  right: 0;
+		  bottom: 0;
+		  background-color: rgba(0,0,0,0.8);
+		  z-index: 2;
+		  cursor: pointer;
+		}
+
+		#text {
+		  position: absolute;
+		  top: 50%;
+		  left: 50%;
+		  font-size: 50px;
+		  color: white;
+		  transform: translate(-50%,-50%);
+		  -ms-transform: translate(-50%,-50%);
+		}
+	</style>
+</head>
+	<body>
+		<div id="overlay">
+			<div id="text">Collision Alert!</div>
+		</div>
+		<script src="../js/build/Three.js"></script>
+		<script src="../js/build/OrbitControls.js"></script>
+		<script src="../js/build/ColladaLoader.js"></script>
+		<script src="../js/build/GLTFLoader.js"></script>
+		<script src="../js/build/FBXLoader.js"></script>
+		<script src="../js/build/Inflate.min.js"></script>
+		<script src="../js/build/Detector.js"></script>
+		<script src="../js/build/stats.js"></script>
+		<script src="../js/build/THREEx.FullScreen.js"></script>
+		<script src="../js/build/THREEx.WindowResize.js"></script>
+		<script src="../js/build/THREEx.KeyboardState.js"></script>
+		<script src="../js/build/jquery-1.12.4.js"></script>
+		<script src="../js/build/jquery-ui.js"></script>
+		<link rel=stylesheet href="../css/jquery-ui.css"/>
+		<link rel=stylesheet href="../css/info.css"/>
+		<script src="../js/build/info.js"></script>
+		<div id="infoButton"></div>
+		<div id="infoBox" title="Project information">
+		<center><b>Projekt z grafiki komputerowej "Skrzyzowanie"</b></center>
+		<ul>
+		<li>press <strong>G</strong> or <strong>R</strong> to <span style="text-decoration: underline;">start the traffic</span></li>
+		<li>press <strong>1</strong> to <strong>5</strong> to <span style="text-decoration: underline;">choose the camera</span>:<br />
+		<ul>
+		<li>press <strong>1</strong> to choose <em>Main Camera</em></li>
+		<li>press <strong>2</strong> to choose <em>Left Camera </em></li>
+		<li>press <strong>3</strong> to choose <em>Right Camera </em></li>
+		<li>press <strong>4</strong> to choose <em>Flying over the scene Camera </em></li>
+		<li>press <strong>5</strong> to choose <span style="text-decoration: underline;">Third Person Camera mode</span>, and than press <strong>6</strong> to <strong>9</strong> to <span style="text-decoration: underline;">choose the car<br /></span></li>
+		</ul>
+		</li>
+		<br>
+		<li>press <strong>F</strong> to enter/exit to the <span style="text-decoration: underline;">Fullscreen Mode</span></li>
+		</ul>
+		</div>
+		<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+		<script>
+	
+	//-----[Variables]-----------------------------------------------------------------------------------------------------------------------------------//
+	
+	// variables for renderer
+	var container, renderer;
+
+	// keyboard support
+	var keyboard = new THREEx.KeyboardState();
+
+	// bool variables to activate cameras
+	var LeftCameraActive = false;
+	var RightCameraActive = false;
+	var tpCameraActive = false;
+	var FlyingCameraActive = false;
+
+	// traffic lights brightness
+	var active_red = new THREE.MeshPhongMaterial( {color: "red", emissive: "red"} );
+	var passive_red = new THREE.MeshBasicMaterial( { color: 0xC00C0C, opacity: 1 } );
+	var active_yellow = new THREE.MeshPhongMaterial( {color: "yellow", emissive: "yellow"} );
+	var passive_yellow = new THREE.MeshStandardMaterial({color: "yellow"});
+	var active_green = new THREE.MeshPhongMaterial( {color: "green", emissive: "green"} );
+	var passive_green = new THREE.MeshBasicMaterial( { color: 0x084611, opacity: 1 } );
+			
+	// standart  upper traffic light color	
+	var white = new THREE.MeshStandardMaterial({color: "white"});
+
+	// bool variables to activate traffic lights
+	var green_light_h;
+	var green_light_v;
+
+	// starting position of the roadObjects
+	var y1 = -163;
+	var y2 = 163;
+	var x1 = -163;
+	var x2 = 163;
+
+	// speed of the roadObjects
+	var speed1 = 1;
+	var speed2 = 1;
+	var speed3 = 1;
+	var speed4 = 1;
+
+	// stats.js
+	var stats = new Stats();
+	stats.showPanel( 0 ); 
+	stats.domElement.style.bottom = '0';
+	stats.domElement.style.position = 'absolute';
+	stats.domElement.style.zIndex = 100;
+	document.body.appendChild( stats.domElement );
+
+	// variable for "gif" function
+	var clock = new THREE.Clock();
+
+	// collision array of objects 
+	var collidableMeshList = [];
+
+	//audio
+	var audio = new Audio('audio/damage.mp3');
+	audio.onended = function(){
+		audio.pause()
+	};
+
+	// variable used to stop animation
+	var animatinoActive = 1;
+
+	// car cameras activators
+	var car1Active = false;
+	var car2Active = false;
+	var car3Active = false;
+	var car4Active = false;
+			
+			
+	//-----[Scene]---------------------------------------------------------------------------------------------------------------------------------------//
+    var scene = new THREE.Scene();
+
+	
+	//-----[Cameras]-------------------------------------------------------------------------------------------------------------------------------------//
+	
+	//	[Main camera]
+	var generalCamera = new THREE.PerspectiveCamera(71, window.innerWidth / window.innerHeight, 1, 17000);
+	scene.add(generalCamera);
+	generalCamera.position.set(0, -175, 70); 
+	generalCamera.lookAt(new THREE.Vector3( 0, 0, 0 ));
+
+	//	[Left camera]
+	var LeftCamera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 1, 17000);
+	LeftCamera.position.set(-75, 35, 50);
+	LeftCamera.rotation.x = 1.75;
+	LeftCamera.rotation.y = -1.85;
+	LeftCamera.rotation.z = 0.22;
+	scene.add(LeftCamera);
+	
+	//	[Right camera]
+	var RightCamera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 1, 17000);
+	RightCamera.position.set(27, -21, 25);
+	RightCamera.rotation.x = 1.75;
+	RightCamera.rotation.y = 1.35;
+	RightCamera.rotation.z = -0.18;
+	scene.add(RightCamera);
+	
+	//	["third person" camera]
+	var tpCamera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 1, 17000);
+	scene.add(tpCamera);
+	
+	// [Flying camera]
+	var FlyingCamera = new THREE.PerspectiveCamera(110, window.innerWidth / window.innerHeight, 1, 17000 );
+	scene.add( FlyingCamera );
+	FlyingCamera.position.set(0, 0, 125);	
+	
+	
+	//-----[Renderer]------------------------------------------------------------------------------------------------------------------------------------//
+	if ( Detector.webgl )
+		renderer = new THREE.WebGLRenderer( {antialias:true} );
+	else
+		renderer = new THREE.CanvasRenderer(); 
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		container = document.getElementById( 'ThreeJS' );
+		container.appendChild( renderer.domElement );
+	
+	
+	//-----[Shadows]-------------------------------------------------------------------------------------------------------------------------------------//
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+
+	
+	//-----[OrbitControls]-------------------------------------------------------------------------------------------------------------------------------//
+	var orbitControls = new THREE.OrbitControls(generalCamera, renderer.domElement);
+	orbitControls.minDistance = 31; 			//  limit min distance of the scroll camera;
+    orbitControls.maxDistance = 1000;			//  limit max distance of the scroll camera;
+	
+	
+	//-----[Windows events]------------------------------------------------------------------------------------------------------------------------------//
+	THREEx.WindowResize(renderer, generalCamera);
+	THREEx.WindowResize(renderer, LeftCamera);
+	THREEx.WindowResize(renderer, RightCamera);
+	THREEx.WindowResize(renderer, tpCamera);
+	THREEx.WindowResize(renderer, FlyingCamera);
+	THREEx.FullScreen.bindKey({ charCode : 'f'.charCodeAt(0) });
+	THREEx.FullScreen.bindKey({ charCode : 'F'.charCodeAt(0) });	
+	
+	
+	//-----[Lights]--------------------------------------------------------------------------------------------------------------------------------------//
+    var ambientLight = new THREE.AmbientLight(0xf1f1f1, 0.7);
+    scene.add(ambientLight);
+
+	var spotLight = new THREE.DirectionalLight("white", 0.75);
+    spotLight.position.set(0, -15, 375);
+	//spotLight0.castShadows = true;
+    scene.add(spotLight);
+	
+	// // light X- Y+ 
+	// var spotLight1 = new THREE.SpotLight("white", 0.35); 
+    // spotLight1.position.set(-75, 90, 75); 
+	// // spotLight1.castShadows = true; 
+    // scene.add(spotLight1); 
+	//+
+	// var sc1 = new THREE.Mesh( new THREE.SphereBufferGeometry( 5, 32, 32 ), new THREE.MeshPhongMaterial({color: "blue"}) ); 
+	// sc1.position.set(-75, 90, 75); 
+	// scene.add(sc1); 
+
+	// // light X+ Y+ /*
+	// var spotLight2 = new THREE.SpotLight("white", 0.5); 
+    // spotLight2.position.set(75, 39, 5); 
+    // scene.add(spotLight2);
+	// //+ 
+	// var sc2 = new THREE.Mesh( new THREE.SphereBufferGeometry( 5, 32, 32 ), new THREE.MeshPhongMaterial({color: "red"}) ); 
+	// sc2.position.set(75, 39, 51); 
+	// scene.add(sc2); 
+
+	// // light X+ Y- 
+	// var spotLight3 = new THREE.DirectionalLight("white", 0.15); 
+    // spotLight3.position.set(75, -78, 75); 
+    // scene.add(spotLight3); 
+	//+
+	// var sc3 = new THREE.Mesh( new THREE.SphereBufferGeometry( 5, 32, 32 ), new THREE.MeshPhongMaterial({color: "green"}) ); 
+	// sc3.position.set(75, -78, 75); 
+	// scene.add(sc3); 
+
+	// // light X- Y- 
+	// var spotLight4 = new THREE.SpotLight("white", 0.15); 
+    // spotLight4.position.set(-75, -78, 75); 
+    // scene.add(spotLight4); 
+	//+
+	// var sc4 = new THREE.Mesh( new THREE.SphereBufferGeometry( 5, 32, 32 ), new THREE.MeshPhongMaterial({color: "orange"}) ); 
+	// sc4.position.set(-75, -78, 75); 
+	// scene.add(sc4); 
+	
+	
+	//-----[SkyBox]--------------------------------------------------------------------------------------------------------------------------------------//
+	var geometrySB = new THREE.CubeGeometry(7500, 7500, 7500);
+	var materialsSB = 
+	[
+		new THREE.MeshLambertMaterial( {map: new THREE.TextureLoader().load("images/skybox/()Town_lf.png"), side: THREE.BackSide}), 
+		new THREE.MeshLambertMaterial( {map: new THREE.TextureLoader().load("images/skybox/()Town_rt.png"), side: THREE.BackSide}), 
+		new THREE.MeshLambertMaterial( {map: new THREE.TextureLoader().load("images/skybox/()Town_ft.png"), side: THREE.BackSide}), 
+		new THREE.MeshLambertMaterial( {map: new THREE.TextureLoader().load("images/skybox/()Town_bk.png"), side: THREE.BackSide}), 
+		new THREE.MeshLambertMaterial( {map: new THREE.TextureLoader().load("images/skybox/()Town_up.png"), side: THREE.BackSide}), 
+		new THREE.MeshLambertMaterial( {map: new THREE.TextureLoader().load("images/skybox/()Town_dn.png"), side: THREE.BackSide})  
+	];
+	var SkyBox = new THREE.Mesh(geometrySB, materialsSB);
+	SkyBox.castShadow = false;				// shadow
+	SkyBox.receiveShadow = true;			// shadow			
+  	SkyBox.receive = true;
+	SkyBox.position.z = 54;
+	scene.add(SkyBox);
+	
+	// or	
+	//scene.background = new THREE.Color( 0x9595f4 ); 
+    //var backgroundTexture = new THREE.TextureLoader().load( 'images/wallpaper-1873409.jpg' ); 
+	//scene.background = backgroundTexture; 
+	
+	//-----[SUN and MOON]--------------------------------------------------------------------------------------------------------------------------------//
+	
+	// [Group]
+	var sunGroup = new THREE.Group();
+	var moonGroup = new THREE.Group();
+
+	// [Objects]
+		
+	// Light
+	var LightSun = new THREE.DirectionalLight("white", 0.05 /*distance*/ );
+	//LightSun.position.set(0, 0, 50);
+
+	// Mesh
+	var sunGeometry = new THREE.SphereBufferGeometry(15, 50, 50);
+	var sunMaterial = new THREE.MeshPhongMaterial({
+		map: new THREE.TextureLoader().load("images/sun_texture.jpg"),
+		emissive :"yellow", 
+		emissiveIntensity : 0.31
+	});
+	var sun = new THREE.Mesh(sunGeometry, sunMaterial);
+	sun.position.set(0, 0, 0);
+		  
+
+	// Light
+	var LightMoon = new THREE.DirectionalLight(0x6edce1, 0.09);
+	//LightMoon.position.set(0, 0, -50);
+
+	// Moon 
+	var moonGeometry = new THREE.SphereGeometry(15, 50, 50);
+	var moonMaterial = new THREE.MeshPhongMaterial({ 
+		map: new THREE.TextureLoader().load("images/moon_texture.jpg"), 
+		emissive : 0x06574d, 
+		emissiveIntensity : 0.26
+	});
+	var moon = new THREE.Mesh(moonGeometry, moonMaterial);
+	moon.position.set(0, 0, -50);
+
+	sunGroup.add (LightSun);
+	sunGroup.add (sun);
+	scene.add(sunGroup);  
+	
+	moonGroup.add (LightMoon);
+	moonGroup.add (moon);
+	scene.add(moonGroup);  
+
+	// Sun rotation parameters
+	var r = 305;
+	var thetaa = 0;
+	var thetab = 3.1;
+    var dTheta = -2 * Math.PI / 550;
+
+	
+	//-----[OBJECTS]-------------------------------------------------------------------------------------------------------------------------------------//
+	  
+	// [vertical road]	
+	var geometryR = new THREE.PlaneBufferGeometry( 27, 326);
+	var materialR = new THREE.MeshPhongMaterial({map: new THREE.TextureLoader().load("images/road_vertical.png")});
+	var road = new THREE.Mesh( geometryR, materialR );
+	scene.add( road );
+
+	// [left road]	
+	var geometryRL = new THREE.PlaneBufferGeometry( 150, 27);
+	var materialRL = new THREE.MeshPhongMaterial({map: new THREE.TextureLoader().load("images/left_road.png")});
+	var roadl = new THREE.Mesh( geometryRL, materialRL );
+	roadl.position.set(-88.5, 0, 0);
+	scene.add( roadl );
+
+	// [right road]	
+	var geometryRR = new THREE.PlaneBufferGeometry(150, 27);
+	var materialRR = new THREE.MeshPhongMaterial({map: new THREE.TextureLoader().load("images/right_road.png")});
+	var roadr = new THREE.Mesh( geometryRR, materialRR );
+	roadr.position.set(88.5, 0, 0);
+	scene.add( roadr );
+
+	// [plane - down-left]
+	var geometryP1 = new THREE.CircleBufferGeometry(150, 32, 0, 1.556);
+	var texture_wrap = new THREE.TextureLoader().load( "images/()Town_dn.png" );
+	texture_wrap.wrapS = THREE.RepeatWrapping;
+	texture_wrap.wrapT = THREE.RepeatWrapping;
+	texture_wrap.repeat.set( 4, 4 );
+	var materialP1 = new THREE.MeshPhongMaterial( { map: texture_wrap } );
+	var plane1 = new THREE.Mesh( geometryP1, materialP1 );
+	plane1.position.set(-12.9, -12.9, 0);
+	plane1.rotation.z = 3.15;
+	scene.add( plane1 );
+
+	// [plane - up-right]
+	var geometryP2 = new THREE.CircleBufferGeometry(150, 32, 0, 1.57);
+	var texture_wrap_tile = new THREE.TextureLoader().load( "images/tile.png" );
+	texture_wrap_tile.wrapS = THREE.RepeatWrapping;
+	texture_wrap_tile.wrapT = THREE.RepeatWrapping;
+	texture_wrap_tile.repeat.set( 4, 4 );
+	var materialP2 = new THREE.MeshPhongMaterial( { map: texture_wrap_tile } );
+	var plane2 = new THREE.Mesh( geometryP2, materialP2);
+	plane2.position.set(12.9, 12.9, 0);
+	scene.add( plane2 );
+		
+	// [plane - up-left]
+	var geometryP3 = new THREE.CircleBufferGeometry(150, 32, 0, 1.57);
+	var materialP3 = new THREE.MeshPhongMaterial( { map: texture_wrap } );
+	var plane3 = new THREE.Mesh( geometryP3, materialP3 );
+	plane3.position.set(-12.9, 12.9, 0);
+	plane3.rotation.z = 1.57;
+	scene.add( plane3 );
+
+	// [plane - down-right]
+	var geometryP4 = new THREE.CircleBufferGeometry(150, 32, 0, 1.57);
+	var materialP4 = new THREE.MeshPhongMaterial( { map: texture_wrap } );
+	var plane4 = new THREE.Mesh( geometryP4, materialP4 );
+	plane4.position.set(12.9, -12.9, 0);
+	plane4.rotation.z = -1.57;
+	scene.add( plane4 );
+		
+	// [back plane]
+	var geometryEE = new THREE.CircleBufferGeometry(163, 32);
+	var materialEE = new THREE.MeshPhongMaterial({map: new THREE.TextureLoader().load("images/grassw.jpg"), side: THREE.BackSide});
+	var planeEE = new THREE.Mesh( geometryEE, materialEE );
+	planeEE.position.z = -0.01;
+	scene.add( planeEE );
+
+	//	[trail to tower]
+	var geometryTT = new THREE.PlaneBufferGeometry(74, 4);
+	var texture_wrap2 = new THREE.TextureLoader().load( "images/footpath_brick_texture.png" );
+	texture_wrap2.wrapS = THREE.RepeatWrapping;
+	texture_wrap2.wrapT = THREE.RepeatWrapping;
+	texture_wrap2.repeat.set( 6, 1 );
+	var materialTT = new THREE.MeshPhongMaterial( { map: texture_wrap2 } );
+	var trail_tower = new THREE.Mesh( geometryTT, materialTT );
+	trail_tower.position.set(50, -85, 0);
+	trail_tower.position.z = 0.01;
+	scene.add( trail_tower );	
+
+	//	[trail to eatery]
+	var geometryET = new THREE.PlaneBufferGeometry(5, 41);
+	var texture_wrap3 = new THREE.TextureLoader().load( "images/eatery_brick_texture.png" );
+	texture_wrap3.wrapS = THREE.RepeatWrapping;
+	texture_wrap3.wrapT = THREE.RepeatWrapping;
+	texture_wrap3.repeat.set( 1, 5 );
+	var materialET = new THREE.MeshPhongMaterial( { map: texture_wrap3 } );
+	var eatery_tower = new THREE.Mesh( geometryET, materialET );
+	eatery_tower.position.set(74, 33.35, 0);
+	eatery_tower.position.z = 0.01;
+	scene.add( eatery_tower );	
+	
+
+	geo_down_1c = new THREE.Mesh( new THREE.CylinderBufferGeometry(163, 163, 15, 52), new THREE.MeshPhongMaterial({  map: texture_wrap  }) );
+	geo_down_1c.position.z = -7.8;		//	-10.1; 
+	geo_down_1c.rotation.x = 1.5708	
+	scene.add(geo_down_1c);
+
+	var info_panel_G = new THREE.PlaneBufferGeometry( 15, 15, 1);
+	var info_panel_M = new THREE.MeshPhongMaterial({ map: new THREE.TextureLoader().load('images/info_panel.png') });
+	var info_panel_Mesh = new THREE.Mesh (info_panel_G, info_panel_M);
+	info_panel_Mesh.position.z = -7;
+	scene.add( info_panel_Mesh );	
+
+  //	[ROAD OBJECTS]  -----------------------------------------------------------------------------------------------------------------  [ROAD OBJECTS]
+
+	//	variables for cars
+	var car1, car2, car3, car4;
+
+	// loader
+	var loader = new THREE.ColladaLoader();
+
+	// [roadObject1]
+
+		// mesh to reaction
+		var geometryRO1 = new THREE.CubeGeometry(4, 8.35, 1);
+		var materialRO1 = new THREE.MeshBasicMaterial({color: "yellow"});
+		var roadObject1 = new THREE.Mesh( geometryRO1, materialRO1 );
+		roadObject1.position.set(6, -163, 1.85);  // (6, -163, 1.85);
+
+		// light
+		var RO1_L1 = new THREE.SpotLight("yellow", 0.27, 1500);
+		RO1_L1.position.x = 0;
+		RO1_L1.position.y = 4.5;
+		RO1_L1.position.z = -2;
+		RO1_L1.castShadow = false;
+		RO1_L1.shadow.mapSize.width = 1024;
+		RO1_L1.shadow.mapSize.height = 1024;
+		var targetObject1 = new THREE.Object3D();
+		targetObject1.position.set(0, 1000, 0);
+		scene.add(targetObject1);
+		RO1_L1.target = targetObject1;
+		roadObject1.add(RO1_L1);
+
+		// model around mesh
+		loader.load( 'models/Simple_Car/SimpleCarYellow(.blend).dae', function ( collada ) 
+		{
+			car1 = collada.scene;
+			collada.scene.scale.set(1.5, 1.5, 1.5);
+			collada.scene.rotation.x = 0;
+			collada.scene.position.set(0, 0, -4.9);
+			roadObject1.add( collada.scene );
+		} );
+			scene.add( roadObject1 );
+		
+	// [roadObject2]
+
+		// mesh to reaction
+		var geometryRO2 = new THREE.CubeGeometry(4, 8.35, 1);
+		var materiaRO2 = new THREE.MeshBasicMaterial({color: "green"});
+		var roadObject2 = new THREE.Mesh( geometryRO2, materiaRO2 );
+		roadObject2.position.set(-6, 163, 1.85);
+
+		// light
+		var RO1_L2 = new THREE.SpotLight("yellow", 0.27, 1500);
+		RO1_L2.position.x = 0;
+		RO1_L2.position.y = -4.5;
+		RO1_L2.position.z = -2;
+		RO1_L2.shadow.mapSize.width = 1024;
+		RO1_L2.shadow.mapSize.height = 1024;
+		var targetObject2 = new THREE.Object3D();
+		targetObject2.position.set(0, -1000, 0);
+		scene.add(targetObject2);
+		RO1_L2.target = targetObject2;
+		roadObject2.add(RO1_L2);
+
+		// model around mesh	
+		loader.load( 'models/Simple_Car/SimpleCarGreen(.blend).dae', function ( collada ) 
+		{
+			car2 = collada.scene;
+			collada.scene.scale.set(1.5, 1.5, 1.5);
+			collada.scene.rotation.z = 3.14;
+			collada.scene.rotation.x = 0;
+			collada.scene.position.set(0, 0, -4.9);  
+			roadObject2.add( collada.scene );
+		} );
+		scene.add( roadObject2 );
+				
+	// [roadObject3]
+
+		// mesh to reaction
+		var geometryRO3 = new THREE.CubeGeometry( 8.35, 4, 1);
+		var materiaRO3 = new THREE.MeshBasicMaterial({color: "violet"});
+		var roadObject3 = new THREE.Mesh( geometryRO3, materiaRO3 );
+		roadObject3.position.set(163, 6, 1.85);
+
+		// light
+		var RO1_L3 = new THREE.SpotLight("yellow", 0.27, 1500);
+		RO1_L3.position.x = 4.5;
+		RO1_L3.position.y = 0;
+		RO1_L3.position.z = -2;
+		RO1_L3.shadow.mapSize.width = 1024;
+		RO1_L3.shadow.mapSize.height = 1024;
+		var targetObject3 = new THREE.Object3D();
+		targetObject3.position.set(-1000, 0, 0);
+		scene.add(targetObject3);
+		RO1_L3.target = targetObject3;
+		roadObject3.add(RO1_L3);
+
+		// model around mesh	
+		loader.load( 'models/Simple_Car/SimpleCarViolet(.blend).dae', function ( collada ) 
+		{
+			car3 = collada.scene;
+			collada.scene.scale.set(1.5, 1.5, 1.5);
+			collada.scene.rotation.z = 1.56;
+			collada.scene.rotation.x = 0;
+			collada.scene.position.set(0, 0, -4.9);
+			roadObject3.add( collada.scene );
+		} );
+		scene.add( roadObject3 );
+
+	// [roadObject4]
+
+		// mesh to reaction
+		var geometryRO4 = new THREE.CubeGeometry( 8.35, 4, 1);
+		var materiaRO4 = new THREE.MeshBasicMaterial({color: "red"});
+		var roadObject4 = new THREE.Mesh( geometryRO4, materiaRO4 );
+		roadObject4.position.set(-163, -6, 1.85);
+
+		// light
+		var RO1_L4 = new THREE.SpotLight("yellow", 0.27, 1500);
+		RO1_L4.position.x = -4.5;
+		RO1_L4.position.y = 0;
+		RO1_L4.position.z = -2;
+		RO1_L4.shadow.mapSize.width = 1024;
+		RO1_L4.shadow.mapSize.height = 1024;
+		var targetObject4 = new THREE.Object3D();
+		targetObject4.position.set(1000, 0, 0);
+		scene.add(targetObject4);
+		RO1_L4.target = targetObject4;
+		roadObject4.add(RO1_L4);
+
+		// model around mesh	
+		loader.load( 'models/Simple_Car/SimpleCarRed(.blend).dae', function ( collada ) 
+		{
+			car4 = collada.scene;
+			collada.scene.scale.set(1.5, 1.5, 1.5);
+			collada.scene.rotation.z = -1.56;
+			collada.scene.rotation.x = 0;
+			collada.scene.position.set(0, 0, -4.9);
+			roadObject4.add( collada.scene );
+		} );
+		scene.add( roadObject4 );
+				
+	// insert cubes into collision array
+	collidableMeshList.push(roadObject1);
+	collidableMeshList.push(roadObject2);
+	collidableMeshList.push(roadObject3);
+	collidableMeshList.push(roadObject4);
+			
+	//// cars 5, 6, 7, 8
+	//// mesh to reaction
+	//var geometryRO11 = new THREE.CubeGeometry(4, 8.35, 1);
+	//var materialRO11 = new THREE.MeshBasicMaterial({color: "yellow"});
+	//var roadObject11 = new THREE.Mesh( geometryRO11, materialRO11 );
+	//roadObject11.position.set(6, -163, 1.85);
+	//scene.add( roadObject11 );
+
+	//// mesh to reaction
+	//var geometryRO22 = new THREE.CubeGeometry(4, 8.35, 1);
+	//var materiaRO22 = new THREE.MeshBasicMaterial({color: "green"});
+	//var roadObject22 = new THREE.Mesh( geometryRO22, materiaRO22 );
+	//roadObject22.position.set(-6, 163, 1.85);
+	//scene.add( roadObject22 );
+
+	//// mesh to reaction
+	//var geometryRO33 = new THREE.CubeGeometry( 8.35, 4, 1);
+	//var materiaRO33 = new THREE.MeshBasicMaterial({color: "violet"});
+	//var roadObject33 = new THREE.Mesh( geometryRO33, materiaRO33 );
+	//roadObject33.position.set(163, 6, 1.85);
+	//scene.add( roadObject33 );
+
+	//// mesh to reaction
+	//var geometryRO44 = new THREE.CubeGeometry( 8.35, 4, 1);
+	//var materiaRO44 = new THREE.MeshBasicMaterial({color: "red"});
+	//var roadObject44 = new THREE.Mesh( geometryRO44, materiaRO44 );
+	//roadObject44.position.set(-163, -6, 1.85);
+	//scene.add( roadObject44 );
+		
+  //	-------------------------------------------------------------------------------------------------------------------------------------------------
+  //	[TRAFFIC LIGHTS]  -------------------------------------------------------------------------------------------------------------  [TRAFFIC LIGHTS]
+	
+	// (traffic light 1 - down-left)   ---------------------------------------------------------------------------------------   (TL1-dl)
+	var light1group = new THREE.Group();
+
+	var geometrytlight1box = new THREE.BoxBufferGeometry( 4, 4, 8 );						
+	var materialtlight1box = new THREE.MeshBasicMaterial( {color: 0x2B2B2B } );
+	var light1box = new THREE.Mesh( geometrytlight1box, materialtlight1box );
+	light1box.position.set(0,0,11);
+
+	var geometrytlight1stem = new THREE.CylinderBufferGeometry( 1, 1, 6 );
+	var materialtlight1stem = new THREE.MeshStandardMaterial({
+		color: 0x4F4E4E,
+		roughness: 0,
+		metalness: 0.5
+		});
+	var light1stem = new THREE.Mesh( geometrytlight1stem, materialtlight1stem );			
+	light1stem.position.set(0,0,4);
+	light1stem.rotation.x = 1.58;
+
+	var geometrytlight1red = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );					
+	var materialtlight1red = passive_red;
+	var light1red = new THREE.Mesh( geometrytlight1red, materialtlight1red );
+	light1red.position.set(0,0,8.5);
+	light1red.rotation.z = 1.58;
+
+	var geometrytlight1yellow = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );				
+	var materialtlight1yellow = new THREE.MeshStandardMaterial({color: "yellow"});
+	var light1yellow = new THREE.Mesh( geometrytlight1yellow, materialtlight1yellow );
+	light1yellow.position.set(0,0,11);
+	light1yellow.rotation.z = 1.58;
+
+	var geometrytlight1green = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );				
+	var materialtlight1green = passive_green;
+	var light1green = new THREE.Mesh( geometrytlight1green, materialtlight1green );
+	light1green.position.set(0,0,13.5);
+	light1green.rotation.z = 1.58;
+
+	// to show from the top, what is current color on traffic light
+	var geometrytlight1up = new THREE.CircleBufferGeometry( 1.8, 32 );
+	var materialtlight1up = white;
+	var light1up = new THREE.Mesh( geometrytlight1up, materialtlight1up );
+	light1up.position.set(0,0,15.01);
+	light1up.rotation.z = 2;
+
+	light1group.add(light1box);																		
+	light1group.add(light1stem);
+	light1group.add(light1red);
+	light1group.add(light1yellow);
+	light1group.add(light1green);
+	light1group.add(light1up);
+	scene.add(light1group);
+	light1group.position.set(-16, -16, -1);
+		
+		
+	// (traffic light 2 - up-left)   -----------------------------------------------------------------------------------------   (TL2-ul)
+	var light2group = new THREE.Group();
+
+	var geometrytlight2box = new THREE.BoxBufferGeometry( 4, 4, 8 );																				
+	var materialtlight2box = new THREE.MeshBasicMaterial( {color: 0x2B2B2B } );
+	var light2box = new THREE.Mesh( geometrytlight2box, materialtlight2box );
+	light2box.position.set(0,0,11);
+
+	var geometrytlight2stem = new THREE.CylinderBufferGeometry( 1, 1, 6 );							
+	var materialtlight2stem = new THREE.MeshStandardMaterial({
+		color: 0x4F4E4E,
+		roughness: 0,
+		metalness: 0.5
+		});
+	var light2stem = new THREE.Mesh( geometrytlight2stem, materialtlight2stem );
+	light2stem.position.set(0,0,4);
+	light2stem.rotation.x = 1.58;
+
+	var geometrytlight2red = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );										
+	var materialtlight2red = new THREE.MeshStandardMaterial({color: "red"});
+	var light2red = new THREE.Mesh( geometrytlight2red, materialtlight2red );
+	light2red.position.set(0,0,8.5);
+	light2red.rotation.z = 1.58;
+
+	var geometrytlight2yellow = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );			
+	var materialtlight2yellow = new THREE.MeshStandardMaterial({color: "yellow"});
+	var light2yellow = new THREE.Mesh( geometrytlight2yellow, materialtlight2yellow );
+	light2yellow.position.set(0,0,11);
+	light2yellow.rotation.z = 1.58;
+
+	var geometrytlight2green = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );									
+	var materialtlight2green = new THREE.MeshStandardMaterial({color: "green"});
+	var light2green = new THREE.Mesh( geometrytlight2green, materialtlight2green );
+	light2green.position.set(0,0,13.5);
+	light2green.rotation.z = 1.58;
+
+	var geometrytlight2up = new THREE.CircleBufferGeometry( 1.8, 32 );													
+	var materialtlight2up = white;
+	var light2up = new THREE.Mesh (geometrytlight2up, materialtlight2up);
+	light2up.position.set(0,0,15.01);
+	light2up.rotation.z = 2;
+
+	light2group.add(light2box);
+	light2group.add(light2stem);
+	light2group.add(light2red);
+	light2group.add(light2yellow);
+	light2group.add(light2green);
+	light2group.add(light2up);
+
+	scene.add(light2group);
+	light2group.rotation.z = 1.6;
+	light2group.position.set(-16, 16, -1);
+
+		
+	// (traffic light 3 - down-right)   --------------------------------------------------------------------------------------   (TL3-dr)
+	var light3group = new THREE.Group();
+
+	var geometrytlight3box = new THREE.BoxBufferGeometry( 4, 4, 8 );
+	var materialtlight3box = new THREE.MeshBasicMaterial( {color: 0x2B2B2B } );
+	var light3box = new THREE.Mesh( geometrytlight3box, materialtlight3box );
+	light3box.position.set(0,0,11);
+
+	var geometrytlight3stem = new THREE.CylinderBufferGeometry( 1, 1, 6 );
+	var materialtlight3stem = new THREE.MeshStandardMaterial({
+		color: 0x4F4E4E,
+		roughness: 0,
+		metalness: 0.5
+		});
+	var light3stem = new THREE.Mesh( geometrytlight3stem, materialtlight3stem );
+	light3stem.position.set(0,0,4);
+	light3stem.rotation.x = 1.58;
+
+	var geometrytlight3red = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );
+	var materialtlight3red = new THREE.MeshStandardMaterial({color: "red"});
+	var light3red = new THREE.Mesh( geometrytlight3red, materialtlight3red );
+	light3red.position.set(0,0,8.5);
+	light3red.rotation.z = 1.58;
+
+	var geometrytlight3yellow = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );
+	var materialtlight3yellow = new THREE.MeshStandardMaterial({color: "yellow"});
+	var light3yellow = new THREE.Mesh( geometrytlight3yellow, materialtlight3yellow );
+	light3yellow.position.set(0,0,11);
+	light3yellow.rotation.z = 1.58;
+
+	var geometrytlight3green = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );
+	var materialtlight3green = new THREE.MeshStandardMaterial({color: "green"});
+	var light3green = new THREE.Mesh( geometrytlight3green, materialtlight3green );
+	light3green.position.set(0,0,13.5);
+	light3green.rotation.z = 1.58;
+
+	var geometrytlight3up = new THREE.CircleBufferGeometry( 1.8, 32 );
+	var materialtlight3up = white;
+	var light3up = new THREE.Mesh (geometrytlight3up, materialtlight3up);
+	light3up.position.set(0,0,15.01);
+	light3up.rotation.z = 2;
+
+	light3group.add(light3box);
+	light3group.add(light3stem);
+	light3group.add(light3red);
+	light3group.add(light3yellow);
+	light3group.add(light3green);
+	light3group.add(light3up);
+
+	scene.add(light3group);
+	light3group.rotation.z = 1.6;
+	light3group.position.set(16, -16, -1);
+
+		
+	// (traffic light 4 - up-right)   ----------------------------------------------------------------------------------------   (TL4-ur)					
+	var light4group = new THREE.Group();															
+
+	var geometrytlight4box = new THREE.BoxBufferGeometry( 4, 4, 8 );								
+	var materialtlight4box = new THREE.MeshBasicMaterial( {color: 0x2B2B2B } );						
+	var light4box = new THREE.Mesh( geometrytlight4box, materialtlight4box );						
+	light4box.position.set(0,0,11);																	
+
+	var geometrytlight4stem = new THREE.CylinderBufferGeometry( 1, 1, 6 );							
+	var materialtlight4stem = new THREE.MeshStandardMaterial({										
+		color: 0x4F4E4E,																			
+		roughness: 0,																				
+		metalness: 0.5																				
+		});																							
+	var light4stem = new THREE.Mesh( geometrytlight4stem, materialtlight4stem );					
+	light4stem.position.set(0,0,4);																	
+	light4stem.rotation.x = 1.58;																	
+
+	var geometrytlight4red = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );
+	var materialtlight4red = new THREE.MeshStandardMaterial({color: "red"});
+	var light4red = new THREE.Mesh( geometrytlight4red, materialtlight4red );
+	light4red.position.set(0,0,8.5);
+	light4red.rotation.z = 1.58;
+
+	var geometrytlight4yellow = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );
+	var materialtlight4yellow = new THREE.MeshStandardMaterial({color: "yellow"});
+	var light4yellow = new THREE.Mesh( geometrytlight4yellow, materialtlight4yellow );
+	light4yellow.position.set(0,0,11);
+	light4yellow.rotation.z = 1.58;
+
+	var geometrytlight4green = new THREE.CylinderBufferGeometry( 1, 1, 4.5, 32, 32 );
+	var materialtlight4green = new THREE.MeshStandardMaterial({color: "green"});
+	var light4green = new THREE.Mesh( geometrytlight4green, materialtlight4green );
+	light4green.position.set(0,0,13.5);
+	light4green.rotation.z = 1.58;
+
+	var geometrytlight4up = new THREE.CircleBufferGeometry( 1.8, 32 );
+	var materialtlight4up = white;
+	var light4up = new THREE.Mesh( geometrytlight4up, materialtlight4up );
+	light4up.position.set(0,0,15.01);
+	light4up.rotation.z = 2;
+
+	light4group.add(light4box);
+	light4group.add(light4stem);
+	light4group.add(light4red);
+	light4group.add(light4yellow);
+	light4group.add(light4green);
+	light4group.add(light4up);
+
+	scene.add(light4group);
+	light4group.position.set(16, 16, -1);
+  //	-------------------------------------------------------------------------------------------------------------------------------------------------
+  // 	[SIDE OBJECTS]  -----------------------------------------------------------------------------------------------------------------  [SIDE OBJECTS]
+	
+	//	[banner]  -----------------------------------------------------------------------------------------------------------------------  [banner]
+	var bannerGroup = new THREE.Group();
+	
+	var geometry_pillar1 = new THREE.CylinderBufferGeometry( 0.76, 0.76, 19, 32 );
+	var material_pillar1 = new THREE.MeshStandardMaterial({ color: "grey", roughness: 0.5, metalness: 0.79 });
+	var pillar1 = new THREE.Mesh( geometry_pillar1, material_pillar1 );
+	pillar1.position.x = -9;
+	pillar1.position.z = 10.5;
+	pillar1.rotation.x = 1.56;
+	
+	var geometry_pillar2 = new THREE.CylinderBufferGeometry( 0.76, 0.76, 19, 32 );
+	var material_pillar2 = new THREE.MeshStandardMaterial({ color: "grey", roughness: 0.5, metalness: 0.79 });
+	var pillar2 = new THREE.Mesh( geometry_pillar2, material_pillar2 );
+	pillar2.position.x = 9;
+	pillar2.position.z = 10.5;
+	pillar2.rotation.x = 1.56;
+
+	var runnerTexture1 = new THREE.TextureLoader().load( 'images/banner_front_new.png' );
+	var runnerTexture2 = new THREE.TextureLoader().load( 'images/banner_back_new.png' );
+	var runnerTexture3 = new THREE.TextureLoader().load( 'images/banner_arrows_new.png' );
+	var AD1 = new TextureAnimator( runnerTexture1, 5, 1, 10, 405 ); // texture, #horiz, #vert, #total, duration.
+	var AD2 = new TextureAnimator( runnerTexture2, 5, 1, 10, 405 );
+	var AD3 = new TextureAnimator( runnerTexture3, 1.5, 1, 10, 75 );
+	var geometry_banner = new THREE.BoxBufferGeometry( 45, 2.5, 28 );
+	var materials_banner = [
+		new THREE.MeshPhongMaterial({ map: runnerTexture3, side:THREE.FrontSide } ),
+		new THREE.MeshPhongMaterial({ map: runnerTexture3, side:THREE.FrontSide } ),
+		new THREE.MeshPhongMaterial({ map: runnerTexture2, side:THREE.FrontSide } ),
+		new THREE.MeshBasicMaterial({ map: runnerTexture1, side:THREE.FrontSide } ),
+		new THREE.MeshPhongMaterial({ map: runnerTexture3, side:THREE.FrontSide } ),
+		new THREE.MeshPhongMaterial({ map: runnerTexture3, side:THREE.FrontSide } )
+	];
+	var banner = new THREE.Mesh( geometry_banner, materials_banner );
+	banner.position.z = 29.1;
+
+	bannerGroup.add( pillar1 );
+	bannerGroup.add( pillar2 );
+	bannerGroup.add( banner );
+	bannerGroup.position.set(-70, 45, 0);
+	bannerGroup.rotation.z = 0.41;
+	scene.add( bannerGroup );
+
+	// [eatery + signboard]  ------------------------------------------------------------------------------------------------------------  [eatery + signboard]
+	var eateryGroup = new THREE.Group();
+	
+	var geometry_eatery = new THREE.BoxBufferGeometry( 60, 44, 29 );
+	var materials_eatery = [
+		new THREE.MeshPhongMaterial({ map: new THREE.TextureLoader().load('images/eatery_right_side.jpg') }),
+		new THREE.MeshPhongMaterial({ map: new THREE.TextureLoader().load('images/eatery_left_side.jpg') }),
+		new THREE.MeshPhongMaterial({ map: new THREE.TextureLoader().load('images/eatery_back.jpg') }),
+		new THREE.MeshPhongMaterial({ map: new THREE.TextureLoader().load('images/eatery_front.png') }),
+		new THREE.MeshPhongMaterial({ map: new THREE.TextureLoader().load('images/eatery_roof.jpg') }),
+		new THREE.MeshPhongMaterial({ map: new THREE.TextureLoader().load('') })
+	];
+	var eatery = new THREE.Mesh( geometry_eatery, materials_eatery );
+	eatery.position.z = 14.5;
+	
+	var geometry_eatery_pillar1 = new THREE.CylinderBufferGeometry( 1.8, 1.8, 12, 32 );
+	var material_eatery_pillar1 = new THREE.MeshStandardMaterial({ color: 0xf3ffe2, roughness: 0.9, metalness: 0.89 });
+	var eatery_pillar1 = new THREE.Mesh( geometry_eatery_pillar1, material_eatery_pillar1 );
+	eatery_pillar1.position.x = -8;
+	eatery_pillar1.position.z = 32;
+	eatery_pillar1.rotation.x = 1.56;
+	
+	var geometry_eatery_pillar2 = new THREE.CylinderBufferGeometry( 1.8, 1.8, 12, 32 );
+	var material_eatery_pillar2 = new THREE.MeshStandardMaterial({ color: 0xf3ffe2, roughness: 0.9, metalness: 0.89 });;
+	var eatery_pillar2 = new THREE.Mesh( geometry_eatery_pillar2, material_eatery_pillar2 );
+	eatery_pillar2.position.x = 8;
+	eatery_pillar2.position.z = 35;
+	eatery_pillar2.rotation.x = 1.56;
+	
+	var geometry_eatery_torus = new THREE.TorusBufferGeometry( 12, 6, 16, 32 );
+	var texture_eatery_torus = new THREE.TextureLoader().load( 'images/donut_texture.jpg' );
+	var material_eatery_torus = new THREE.MeshBasicMaterial( { map: texture_eatery_torus } );
+	var eatery_torus = new THREE.Mesh( geometry_eatery_torus, material_eatery_torus );
+	eatery_torus.position.z = 51;
+	eatery_torus.rotation.order = 'ZXY';
+	eatery_torus.rotation.y = 1.55;
+	eatery_torus.rotation.z = 1.55;
+	
+	eateryGroup.add ( eatery );
+	eateryGroup.add ( eatery_pillar1 );
+	eateryGroup.add ( eatery_pillar2 );
+	eateryGroup.add ( eatery_torus );
+	eateryGroup.position.set( 75, 75, 0.21);
+	scene.add ( eateryGroup );
+	
+	var fontLoader = new THREE.FontLoader();
+	fontLoader.load("fonts/Master Of Break_Regular.json",function(tex)
+	{ 
+		var textGeo = new THREE.TextGeometry('Town Eatery', 
+		{
+			size: 7,
+			height: 1,
+			curveSegments: 15,
+			font: tex,
+		});
+		var textMaterial = new THREE.MeshStandardMaterial({ color: 0xE8DA00, roughness: 1.0, metalness: 0, emissive: 0xE8DA00 });
+		var text = new THREE.Mesh(textGeo , textMaterial);
+		text.rotation.x = 1.57;
+		text.position.set(51, 53, 22.5);
+		scene.add(text);
+	});
+
+	
+	// [Clock Tower]  -------------------------------------------------------------------------------------------------------------------  [Clock Tower]	
+	var TowerClock = new THREE.Group();
+	
+	// TOWER 3D MODEL
+	var loadergltf = new THREE.GLTFLoader();	
+	loadergltf.load('models/clocktower__hong_kong/scene.gltf', function ( gltf ) 
+						{
+							gltf.scene.scale.set(12, 12, 12);
+							gltf.scene.rotation.x = 1.56;
+							gltf.scene.rotation.y = 3.14;
+							TowerClock.add( gltf.scene );
+						}
+					);
+	
+	// 4 CLOCKS
+		// [Clock 1]
+			// [dial]
+			var geometry_dial = new THREE.CylinderBufferGeometry(20, 21, 4, 48, 1, false);
+			var materialsDial = 
+			[
+				new THREE.MeshStandardMaterial( {color: "white"} ), 
+				new THREE.MeshStandardMaterial( {map: new THREE.TextureLoader().load("images/clock_face.jpg"), side: THREE.FrontSide} ), 
+				new THREE.MeshStandardMaterial( {color: "white"} )  
+			];
+			var dial = new THREE.Mesh(geometry_dial, materialsDial);	
+			
+			// [second hand]
+			var geometry_second = new THREE.SphereBufferGeometry( 1, 32, 32 );
+			geometry_second.applyMatrix( new THREE.Matrix4().makeTranslation(17.6,0,0));
+			var second = new THREE.Mesh(geometry_second, new THREE.MeshStandardMaterial({color: 0xcc0000}));
+			
+			// [minute hand]
+			var geometry_minute = new THREE.BoxBufferGeometry(12, 0.35, 1.15);
+			geometry_minute.applyMatrix( new THREE.Matrix4().makeTranslation(5,0,0));
+			var material_minute = new THREE.MeshStandardMaterial({color: 0x00264d });
+			var minute = new THREE.Mesh(geometry_minute, material_minute);
+
+			// [hour hand]
+			var geometry_hour = new THREE.BoxBufferGeometry(10, 0.35, 1.6);
+			geometry_hour.applyMatrix( new THREE.Matrix4().makeTranslation(5,0,0));
+			var hour = new THREE.Mesh(geometry_hour, new THREE.MeshStandardMaterial({color: 0x0073e6}));
+
+			// [central shaft]
+			var geometry_shaft = new THREE.CylinderBufferGeometry(1.21, 1.21, 1, 48);
+			var shaft = new THREE.Mesh(geometry_shaft, new THREE.MeshStandardMaterial({color: "black" }));
+			
+			// Group
+			var ClockGroup = new THREE.Group();
+			
+			// Positions
+			dial.position.x = 0;
+			dial.position.y = -3;
+			dial.position.z = 0;
+			
+			second.position.x = 0;
+			second.position.y = 0;
+			second.position.z = 0;
+
+			minute.position.x = 0;
+			minute.position.y = -0.5;
+			minute.position.z = 0;
+
+			hour.position.x = 0;
+			hour.position.y = -0.15;
+			hour.position.z = 0;
+
+			shaft.position.y = -0.4;
+
+			// add to group
+			ClockGroup.add( dial );
+			ClockGroup.add( second );
+			ClockGroup.add( minute );
+			ClockGroup.add( hour );
+			ClockGroup.add( shaft );
+			
+			ClockGroup.rotation.x = 0;
+			ClockGroup.rotation.y = 1.56;	
+			ClockGroup.rotation.z = 3.15;	
+			
+			ClockGroup.scale.set(0.15, 0.15, 0.15);
+			ClockGroup.position.set(0, -8, 48.4);
+			
+		// [Clock 2]		
+			var dial2 = dial.clone();	
+			var second2 = second.clone(); 			
+			var minute2 = minute.clone();
+			var hour2 = hour.clone();
+			var shaft2 = shaft.clone();
+		
+			// Group
+			var ClockGroup2 = new THREE.Group();
+			
+			// Positions
+			dial2.position.x = 0;
+			dial2.position.y = -3;
+			dial2.position.z = 0;
+			
+			second2.position.x = 0;
+			second2.position.y = 0;
+			second2.position.z = 0;
+
+			minute2.position.x = 0;
+			minute2.position.y = -0.5;
+			minute2.position.z = 0;
+
+			hour2.position.x = 0;
+			hour2.position.y = -0.15;
+			hour2.position.z = 0;
+
+			shaft2.position.y = -0.4;
+
+			// add to group
+			ClockGroup2.add( dial2 );
+			ClockGroup2.add( second2 );
+			ClockGroup2.add( minute2 );
+			ClockGroup2.add( hour2 );
+			ClockGroup2.add( shaft2 );
+			
+			ClockGroup2.rotation.x = 3.15;
+			ClockGroup2.rotation.y = -1.56;
+			ClockGroup2.rotation.z = 3.15;
+			
+			ClockGroup2.scale.set(0.15, 0.15, 0.15);
+			ClockGroup2.position.set(0, 9, 48);			
+		
+		// [Clock 3] 		
+			var dial3 = dial.clone();	
+			var second3 = second.clone(); 			
+			var minute3 = minute.clone();
+			var hour3= hour.clone();
+			var shaft3 = shaft.clone();
+			
+			// Group
+			var ClockGroup3 = new THREE.Group();
+			
+			// Positions
+			dial3.position.x = 0;
+			dial3.position.y = -3;
+			dial3.position.z = 0;
+			
+			second3.position.x = 0;
+			second3.position.y = 0;
+			second3.position.z = 0;
+
+			minute3.position.x = 0;
+			minute3.position.y = -0.5;
+			minute3.position.z = 0;
+
+			hour3.position.x = 0;
+			hour3.position.y = -0.15;
+			hour3.position.z = 0;
+
+			shaft3.position.y = -0.4;
+
+			// add to group
+			ClockGroup3.add( dial3 );
+			ClockGroup3.add( second3 );
+			ClockGroup3.add( minute3 );
+			ClockGroup3.add( hour3 );
+			ClockGroup3.add( shaft3 );
+			
+			ClockGroup3.rotation.x = -1.56;
+			ClockGroup3.rotation.y = 0;
+			ClockGroup3.rotation.z = -1.56;
+			
+			ClockGroup3.scale.set(0.15, 0.15, 0.15);
+			ClockGroup3.position.set(8.5, 0.5, 48);		
+	
+	
+		// [Clock 4] 		
+			var dial4 = dial.clone();	
+			var second4 = second.clone(); 			
+			var minute4 = minute.clone();
+			var hour4 = hour.clone();
+			var shaft4 = shaft.clone();
+			
+			// Group
+			var ClockGroup4 = new THREE.Group();
+			
+			// Positions
+			dial4.position.x = 0;
+			dial4.position.y = -3;
+			dial4.position.z = 0;
+			
+			second4.position.x = 0;
+			second4.position.y = 0;
+			second4.position.z = 0;
+
+			minute4.position.x = 0;
+			minute4.position.y = -0.5;
+			minute4.position.z = 0;
+
+			hour4.position.x = 0;
+			hour4.position.y = -0.15;
+			hour4.position.z = 0;
+
+			shaft4.position.y = -0.4;
+
+			// add to group
+			ClockGroup4.add( dial4 );
+			ClockGroup4.add( second4 );
+			ClockGroup4.add( minute4 );
+			ClockGroup4.add( hour4 );
+			ClockGroup4.add( shaft4 );
+			
+			ClockGroup4.rotation.x = 1.56;
+			ClockGroup4.rotation.y = 0;
+			ClockGroup4.rotation.z = 1.56;
+			
+			ClockGroup4.scale.set(0.15, 0.15, 0.15);
+			ClockGroup4.position.set(-8.5, 0.5, 48);	
+				
+			TowerClock.add( ClockGroup );
+			TowerClock.add( ClockGroup2 );
+			TowerClock.add( ClockGroup3 );
+			TowerClock.add( ClockGroup4 );
+			TowerClock.position.set( 95, -85, 0);
+			scene.add( TowerClock );
+  //	-------------------------------------------------------------------------------------------------------------------------------------------------		
+  // 	[PORTALS]  ---------------------------------------------------------------------------------------------------------------------------  [PORTALS]
+		var mixer1, mixer2, mixer3, mixer4;
+		
+		var loaderFBX = new THREE.FBXLoader();
+		loaderFBX.load( 'models/Portal/source/Stargate.FBX', function ( object ) 
+		{
+			mixer1 = new THREE.AnimationMixer( object );
+			object.scale.set(0.19, 0.8, 0.19);
+			object.rotation.x = 0;
+			object.position.set(0, 163, 3.1);
+			
+			object2 = object.clone();
+			mixer2 = new THREE.AnimationMixer( object2 );
+			object2.scale.set(0.19, 0.8, 0.19);
+			object2.rotation.x = 0;
+			object2.rotation.z = 3.135;
+			object2.position.set(0, -163, 3.1);
+			
+			object3 = object.clone();
+			mixer3 = new THREE.AnimationMixer( object3 );
+			object3.scale.set(0.19, 0.8, 0.19);
+			object3.rotation.x = 0;
+			object3.rotation.z = 1.56;
+			object3.position.set(-163, 0, 3.1);
+			
+			object4 = object.clone();
+			mixer4 = new THREE.AnimationMixer( object4 );
+			object4.scale.set(0.19, 0.8, 0.19);
+			object4.rotation.x = 0;
+			object4.rotation.z = -1.56;
+			object4.position.set(163, 0, 3.1);
+
+			var action1 = mixer1.clipAction( object.animations[ 0 ] );
+			var action2 = mixer2.clipAction( object.animations[ 0 ] );
+			var action3 = mixer3.clipAction( object.animations[ 0 ] );
+			var action4 = mixer4.clipAction( object.animations[ 0 ] );
+			action1.play();
+			action2.play();
+			action3.play();
+			action4.play();
+			
+			scene.add( object );
+			scene.add( object2 );
+			scene.add( object3 );
+			scene.add( object4 );
+		} );
+
+	// 098 101 122 115 101 110 115 111 119 110 105 101 032 115 116 114 097 099 105 197 130 101 197 155 032 109 105 110 117 116 196 153 032 115 119 111 106 101 103 111 032 099 122 097 115 117 032 110 097 032 116 121 109 032 108 111 108
+
+
+	//	[		F	U 	N	C	T	I	O	N	S		]
+	
+	function up_y_move(obj) 
+	{
+		if (y1 > 163) 
+		{
+			y1 = -163;
+		}
+		y1 = y1 + speed1;
+		obj.position.y = y1; 
+	}
+
+	function down_y_move(obj) 
+	{
+		if (y2 < -163) 
+		{
+			y2 = 163;
+		}
+		y2 = y2 - speed2;
+		obj.position.y = y2; 
+	}
+
+	function right_x_move(obj) 
+	{
+		if (x1 > 163) 
+		{
+			x1 = -163;
+		}
+		x1 = x1 + speed3;
+		obj.position.x = x1;
+	}
+
+	function left_x_move(obj)
+	{
+		if (x2 < -163) 
+		{
+			x2 = 163;
+		}
+		x2 = x2 - speed4;
+		obj.position.x = x2;
+	}
+
+	function if_y_up(obj) 
+	{
+		if (y1 < -30 && green_light_v == false)
+		{	
+			if (y1 == -30)
+			return;
+			else
+			y1 = y1 + 1;
+			obj.position.y = y1;
+		} 
+		if (y1 > -30 && green_light_v == false) 
+		{
+			if (y1 > 163) 
+			{
+				y1 = -163;
+			}
+			y1 = y1 + speed1;
+			obj.position.y = y1;
+		}
+	}
+
+	function if_y_down(obj) 
+	{
+		if (y2 >= 30 && green_light_v == false)
+		{	
+			if (y2 == 30)
+			return;
+			else
+			y2 = y2 - speed2;
+			obj.position.y = y2;
+		} 	
+		if (y2 < 30 && green_light_v == false) 
+		{
+			if (y2 < -163) 
+			{
+				y2 = 163;
+			}
+			y2 = y2 - speed2;
+			obj.position.y = y2;
+		}
+	}
+
+	function if_x_left(obj)
+	{
+		if (x2 >= 30 && green_light_h == false)
+		{	
+			if (x2 == 30)
+			return;
+			else
+			x2 = x2 - speed3;
+			obj.position.x = x2;
+		}
+		if (x2 < 30 && green_light_h == false) 
+		{
+			if (x2 < -163) 
+			{
+				x2 = 163;
+			}
+			x2 = x2 - speed3;
+			obj.position.x = x2;
+		}
+	}
+
+	function if_x_right (obj)
+	{
+		if (x1 <= -30 && green_light_h == false)
+		{	
+			if (x1 == -30)
+			return;
+			else
+			x1 = x1 + speed4;
+			obj.position.x = x1;
+		}
+		if (x1 > -30 && green_light_h == false) 
+		{
+			if (x1 > 163) 
+			{
+				x1 = -163;
+			}
+			x1 = x1 + speed4;
+			obj.position.x = x1;
+		}
+	}
+
+	function sleep(milliseconds) 
+	{
+		var start = new Date().getTime();
+		for (var i = 0; i < 1e7; i++) 
+		{
+			if ((new Date().getTime() - start) > milliseconds)
+			{
+				break;
+			}
+		}
+	}	
+
+	function TextureAnimator(texture, tilesHoriz, tilesVert, numTiles, tileDispDuration) 
+	{		
+		this.tilesHorizontal = tilesHoriz;
+		this.tilesVertical = tilesVert;
+
+		this.numberOfTiles = numTiles;
+		texture.wrapS = texture.wrapT = THREE.RepeatWrapping; 
+		texture.repeat.set( 1 / this.tilesHorizontal, 1 / this.tilesVertical );
+
+		// how long should each image be displayed
+		this.tileDisplayDuration = tileDispDuration;
+
+		// how long has the current image been displayed
+		this.currentDisplayTime = 0;
+
+		// which image is currently being displayed
+		this.currentTile = 0;
+			
+		this.update = function( milliSec )
+		{
+			this.currentDisplayTime += milliSec;
+			while (this.currentDisplayTime > this.tileDisplayDuration)
+			{
+				this.currentDisplayTime -= this.tileDisplayDuration;
+				this.currentTile++;
+				if (this.currentTile == this.numberOfTiles)
+					this.currentTile = 0;
+				var currentColumn = this.currentTile % this.tilesHorizontal;
+				texture.offset.x = currentColumn / this.tilesHorizontal;
+				var currentRow = Math.floor( this.currentTile / this.tilesHorizontal );
+				texture.offset.y = currentRow / this.tilesVertical;
+			}
+		};
+	}
+
+	function on() 
+	{
+		document.getElementById("overlay").style.display = "block";
+	}
+
+	function tpCameraOffset(obj)
+	{
+		relativeCameraOffset = new THREE.Vector3(0, -12, 8); 
+		cameraOffset = relativeCameraOffset.applyMatrix4( obj.matrixWorld );
+
+		tpCamera.position.x = cameraOffset.x;
+		tpCamera.position.y = cameraOffset.y;
+		tpCamera.position.z = cameraOffset.z;
+		
+		tpCamera.lookAt( obj.position );
+	}
+
+	animate();
+
+	function animate() 
+	{
+
+		// portals animation
+		var deltaFBX = clock.getDelta();
+		if ( mixer1 ) mixer1.update( deltaFBX );
+		if ( mixer2 ) mixer2.update( deltaFBX );
+		if ( mixer3 ) mixer3.update( deltaFBX );
+		if ( mixer4 ) mixer4.update( deltaFBX );
+		
+		// sun and moon rotating
+		thetaa += dTheta;
+		thetab += dTheta;
+
+		sunGroup.position.x = r * Math.cos(thetaa);
+		sunGroup.position.z = r * Math.sin(thetaa);
+
+		moonGroup.position.x = r * Math.cos(thetab);
+		moonGroup.position.z = r * Math.sin(thetab);
+
+		sun.rotateY(-0.0009);
+		moon.rotateY(-0.0009);
+		
+		
+		// try events with sun/moon
+		if (sunGroup.position.z < 0)
+		{
+			sunGroup.remove( sun );
+			sunGroup.remove( LightSun );
+			moonGroup.add( moon );
+			moonGroup.add( LightMoon );
+			dTheta = -2 * Math.PI / 750;
+				
+			RO1_L1.intensity = 0.17;
+			RO1_L2.intensity = 0.17;
+			RO1_L3.intensity = 0.17;
+			RO1_L4.intensity = 0.17;
+			
+			ambientLight.intensity = 0.1;
+			spotLight.intensity  = 0.1;
+		}
+		if (sunGroup.position.z > 0)								// солнце выходит из-за горизонта
+		{
+			sunGroup.add( sun );
+			sunGroup.add( LightSun );
+			moonGroup.remove( moon );
+			moonGroup.remove( LightMoon );
+			dTheta = -2 * Math.PI / 2550;
+					
+			RO1_L1.intensity = 0;
+			RO1_L2.intensity = 0;
+			RO1_L3.intensity = 0;
+			RO1_L4.intensity = 0;
+
+			if (spotLight.intensity == 0.65)
+			{				
+				ambientLight.intensity = 0.651;
+				spotLight.intensity  = 0.651;
+			}
+			if (spotLight.intensity < 0.65)
+			{	
+				ambientLight.intensity += 0.002;
+				spotLight.intensity  += 0.002;
+			}
+		}
+		
+		// to stop all animation when collision happened
+		if (animatinoActive == 0) return;
+
+		generalCamera.updateProjectionMatrix();
+
+		requestAnimationFrame( animate );
+		render();	
+		update();
+	}
+
+	function update()
+	{	
+		// for "gif"	
+		var delta = clock.getDelta(); 
+		AD1.update(100 * delta);
+		AD2.update(100 * delta);
+		AD3.update(100 * delta);  
+			
+		// switches for cameras
+		if ( keyboard.pressed("1") )
+		{  
+			LeftCameraActive = false;
+			RightCameraActive = false;
+			tpCameraActive = false;
+			FlyingCameraActive = false;
+		}
+		if ( keyboard.pressed("2") )
+		{	
+			LeftCameraActive = true;
+			chaseCamera2Active = false;
+			tpCameraActive = false;
+		}
+		if ( keyboard.pressed("3") )
+		{	
+			LeftCameraActive = false;
+			RightCameraActive = true;
+			tpCameraActive = false;
+			FlyingCameraActive = false;
+		}
+		if ( keyboard.pressed("4") )
+		{	
+			LeftCameraActive = false;
+			RightCameraActive = false;
+			tpCameraActive = false;
+			FlyingCameraActive = true;
+		}
+		if ( keyboard.pressed("5") )
+		{	
+			LeftCameraActive = false;
+			RightCameraActive = false;
+			tpCameraActive = true;
+		}
+
+		// switches for tpCamera: choosing the car we want to look at (car1, car2, car3, car4);
+			// 1)
+			if ( keyboard.pressed("6") )
+			{	
+				car1Active = true;
+				car2Active = false;
+				car3Active = false;
+				car4Active = false;
+			}
+			if ( keyboard.pressed("7") )
+			{	
+				car1Active = false;
+				car2Active = true;
+				car3Active = false;
+				car4Active = false;
+			}
+			if ( keyboard.pressed("8") )
+			{	
+				car1Active = false;
+				car2Active = false;
+				car3Active = true;
+				car4Active = false;
+			}
+			if ( keyboard.pressed("9") )
+			{	
+				car1Active = false;
+				car2Active = false;
+				car3Active = false;
+				car4Active = true;
+			}
+			// 2)
+			if ( car1Active == true )
+			{	
+				tpCameraOffset(roadObject1);
+			}
+			if ( car2Active == true )
+			{	
+				tpCameraOffset(roadObject2);
+			}
+			if ( car3Active == true )
+			{	
+				tpCameraOffset(roadObject3);
+			}
+			if ( car4Active == true )
+			{	
+				tpCameraOffset(roadObject4);
+			}
+
+		
+		// swithes to activate traffic lights
+		if ( keyboard.pressed("g"))
+		{	
+			for (var i = 0; i < 1; i++)
+			{
+				try{throw i}
+				catch(ii) 
+				{
+					setTimeout(function()
+					{
+						light1yellow.material = passive_yellow;
+						light2yellow.material = passive_yellow;
+						light3yellow.material = passive_yellow;
+						light4yellow.material = passive_yellow;
+						
+						green_light_v = true;
+						green_light_h = false;
+						
+						light1red.material = active_red ;
+						light1green.material = passive_green ;
+						light1up.material = active_red ;
+						
+						light2red.material = passive_red ;
+						light2green.material = active_green ;
+						light2up.material = active_green ;
+						
+						light3red.material = passive_red ;
+						light3green.material = active_green ;
+						light3up.material = active_green ;
+						
+						light4red.material = active_red ;
+						light4green.material = passive_green ;
+						light4up.material = active_red ;
+					},1000);
+					
+					light1yellow.material = active_yellow;
+					light2yellow.material = active_yellow;
+					light3yellow.material = active_yellow;
+					light4yellow.material = active_yellow;	
+				}
+			}
+		}
+		if ( keyboard.pressed("r"))
+		{	
+			for (var i = 0; i < 1; i++)
+			{
+				try{throw i}
+				catch(ii) 
+				{
+					setTimeout(function()
+					{
+						light1yellow.material = passive_yellow;
+						light2yellow.material = passive_yellow;
+						light3yellow.material = passive_yellow;
+						light4yellow.material = passive_yellow;
+						
+						green_light_v = false;
+						green_light_h = true;
+						
+						light1red.material = passive_red ;
+						light1green.material = active_green ;
+						light1up.material = active_green ;
+						
+						light2red.material = active_red ;
+						light2green.material = passive_green ;
+						light2up.material = active_red ;
+						
+						light3red.material = active_red ;
+						light3green.material = passive_green ;
+						light3up.material = active_red ;
+						
+						light4red.material = passive_red ;
+						light4green.material = active_green ;
+						light4up.material = active_green ;
+					},1000);
+					
+					light1yellow.material = active_yellow;
+					light2yellow.material = active_yellow;
+					light3yellow.material = active_yellow;
+					light4yellow.material = active_yellow;	
+				}
+			}
+		}
+		
+		// Time
+			// Set initial time for clock 1
+			var now = new Date();
+			hour.rotation.y   = -((Math.PI * 2) * (now.getHours()   / 12.0))
+			minute.rotation.y = -((Math.PI * 2) * (now.getMinutes() / 60.0))
+			second.rotation.y = -((Math.PI * 2) * (now.getSeconds() / 60.0))
+
+			// Set initial time for clock 3
+			hour2.rotation.y   = hour.rotation.y;
+			minute2.rotation.y = minute.rotation.y;
+			second2.rotation.y = second.rotation.y;
+
+			// Set initial time for clock 3
+			hour3.rotation.y   = hour.rotation.y;
+			minute3.rotation.y = minute.rotation.y;
+			second3.rotation.y = second.rotation.y;	
+
+			// Set initial time for clock 4
+			hour4.rotation.y   = hour.rotation.y;
+			minute4.rotation.y = minute.rotation.y;
+			second4.rotation.y = second.rotation.y;	
+		
+		// collision detection:
+		var originPoint = roadObject1.position.clone();
+		
+		for (var vertexIndex = 0; vertexIndex < roadObject1.geometry.vertices.length; vertexIndex++)
+		{		
+			var localVertex = roadObject1.geometry.vertices[vertexIndex].clone();
+			var globalVertex = localVertex.applyMatrix4( roadObject1.matrix );
+			var directionVector = globalVertex.sub( roadObject1.position );
+			
+			var ray = new THREE.Raycaster( originPoint, directionVector.clone().normalize() );
+			var collisionResults = ray.intersectObjects( collidableMeshList );
+			if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() )
+			{
+				on();
+				audio.play();
+				animatinoActive = 0;
+			}
+		}
+	}
+
+	function render()  
+	{
+		// set traffic lights colors
+		if (green_light_v == true)
+		{
+			up_y_move(roadObject1);			
+			down_y_move(roadObject2);
+			if_x_left(roadObject3);
+			if_x_right(roadObject4);
+		}
+		else if (green_light_h == true)
+		{
+			if_y_up(roadObject1);
+			if_y_down(roadObject2);
+			left_x_move(roadObject3);
+			right_x_move(roadObject4);
+		}
+					
+		// flying camera rotation
+		FlyingCamera.rotateZ(0.001);
+
+		// camera's rendering
+		if (LeftCameraActive)
+		{	renderer.render( scene, LeftCamera ); 	}
+		else if (RightCameraActive)
+		{	renderer.render( scene, RightCamera );  }
+		else if (tpCameraActive)
+		{	renderer.render( scene, tpCamera );		}
+		else if (FlyingCameraActive)
+		{	renderer.render( scene, FlyingCamera );	}
+		else 
+		{	renderer.render( scene, generalCamera );  }
+		
+		// stats
+		stats.update();
+	};
+    </script>
+  </body>
+</html>

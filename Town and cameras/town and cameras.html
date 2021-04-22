@@ -1,0 +1,227 @@
+<!--------------------------------------------------
+	Town and cameras
+ -------------------------------------------------->
+
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Town and Cameras</title>
+	<meta charset="utf-8">
+	</head>
+	<body>
+		<script src="../js/build/Three.js"></script>
+		<script src="../js/build/Detector.js"></script>
+		<script src="../js/build/Stats.js"></script>
+		<script src="../js/build/OrbitControls.js"></script>
+		<script src="../js/build/THREEx.KeyboardState.js"></script>
+		<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+		<script>
+	
+	var container, scene, renderer;
+	var keyboard = new THREEx.KeyboardState();
+	
+	var roadObject;
+	var buildingCamera1, buildingCamera2, tpCamera, CameraMain;
+	var buildingCamera1Active = false;
+	var buildingCamera2Active = false;
+	var tpCameraActive = false;
+	
+	// starting position of the roadObject
+	var y = -25;
+	// how far the roadObject moves every time
+	var speed = 0.15;
+
+	init();
+	animate();
+
+	
+// FUNCTIONS 		
+function init() 
+{
+	// Scene
+    scene = new THREE.Scene();
+	// Static scene background
+	scene.background = THREE.ImageUtils.loadTexture( 'sky.jpg' ); 	
+	
+	var ScWidth = window.innerWidth, ScHeight = window.innerHeight;
+	var ViewAngle = 100, Aspect = ScWidth / ScHeight, ScNear = 1, ScFar = 1000;
+	// Camera main
+	CameraMain = new THREE.PerspectiveCamera( ViewAngle, Aspect, ScNear, ScFar);
+	scene.add(CameraMain);
+	CameraMain.position.set(0, -30, 22);
+	CameraMain.lookAt(scene.position);
+	// Camera 1
+	buildingCamera1 = new THREE.PerspectiveCamera( ViewAngle, Aspect, ScNear, ScFar);
+	buildingCamera1.position.set(-9, -2, 19);
+	scene.add(buildingCamera1);
+	// camera 2
+	buildingCamera2 = new THREE.PerspectiveCamera( ViewAngle, Aspect, ScNear, ScFar);
+	buildingCamera2.position.set(9, 2, 19);
+	scene.add(buildingCamera2);
+	// Camera "third person"
+	tpCamera = new THREE.PerspectiveCamera( ViewAngle, Aspect, ScNear, ScFar);
+	tpCamera.position.set(5, -25, 5);
+	scene.add(tpCamera);
+	
+	// Renderer
+	if ( Detector.webgl )
+		renderer = new THREE.WebGLRenderer( {antialias:true} );
+	else
+		renderer = new THREE.CanvasRenderer(); 
+		renderer.setSize(ScWidth, ScHeight);
+		container = document.getElementById( 'ThreeJS' );
+		container.appendChild( renderer.domElement );
+		
+	
+	// Lights
+    var ambientLight = new THREE.AmbientLight(0xf1f1f1);
+    scene.add(ambientLight);
+      
+	var spotLight = new THREE.DirectionalLight(0xffffff);
+    spotLight.position.set(50,50,50);
+    scene.add(spotLight);
+
+	
+	//Objects 
+	  
+	// [plane left]
+	  var geometryPL = new THREE.PlaneBufferGeometry( 35, 50, 1, 1 );
+	  var materialPL = new THREE.MeshPhongMaterial({map: new THREE.ImageUtils.loadTexture("lesson5_grass.jpg")});
+	  var planeleft = new THREE.Mesh( geometryPL, materialPL );
+	  scene.add( planeleft );
+	  planeleft.position.set(-22, 0, 0);
+	  
+	 // [plane right]
+	  var geometryPR = new THREE.PlaneBufferGeometry( 35, 50, 1, 1 );
+	  var materialPR = new THREE.MeshPhongMaterial({map: new THREE.ImageUtils.loadTexture("lesson5_grass.jpg")});
+	  var planeright = new THREE.Mesh( geometryPR, materialPR );
+	  scene.add( planeright );
+	  planeright.position.set(22, 0, 0);
+	  
+	// [road]	
+		let geometryR = new THREE.PlaneBufferGeometry( 9, 50);
+		let materialR = new THREE.MeshPhongMaterial({map: new THREE.ImageUtils.loadTexture("lesson5_road.jpg")});
+		let road = new THREE.Mesh( geometryR, materialR );
+		scene.add( road );
+		
+	// [bulding left]
+		let geometryBL = new THREE.BoxBufferGeometry( 7, 7, 18);
+		var materiaBL = new THREE.MeshPhongMaterial({map: new THREE.ImageUtils.loadTexture("lesson5_glass_building.jpg")});
+		let buildingLeft = new THREE.Mesh( geometryBL, materiaBL );
+		buildingLeft.position.x = -15;
+		buildingLeft.position.y = -4;
+		buildingLeft.position.z = 9;
+		scene.add( buildingLeft );
+	// [bulding roof left]
+		let geometryBRL = new THREE.PlaneBufferGeometry( 7, 7);
+		var materiaBRL = new THREE.MeshPhongMaterial({map: new THREE.ImageUtils.loadTexture("lesson5_building_roof.png")});
+		let buildingRLeft = new THREE.Mesh( geometryBRL, materiaBRL );
+		buildingRLeft.position.x = -15;
+		buildingRLeft.position.y = -4;
+		buildingRLeft.position.z = 18.01;
+		scene.add( buildingRLeft );
+
+	// [bulding right] 
+		let geometryBR = new THREE.BoxBufferGeometry( 7, 7, 18, 7, 7, 7);
+		let materiaBR = new THREE.MeshPhongMaterial({map: new THREE.ImageUtils.loadTexture("lesson5_glass_building2.jpeg")});
+		let buildingRight = new THREE.Mesh( geometryBR, materiaBR );
+		buildingRight.position.set(15, 1, 9);
+		scene.add( buildingRight );
+	// [bulding roof right]
+		let geometryBRR = new THREE.PlaneBufferGeometry( 7, 7);
+		var materiaBRR = new THREE.MeshPhongMaterial({map: new THREE.ImageUtils.loadTexture("lesson5_building_roof.png")});
+		let buildingRRight = new THREE.Mesh( geometryBRR, materiaBRR );
+		buildingRRight.position.x = 15;
+		buildingRRight.position.y = 1;
+		buildingRRight.position.z = 18.01;
+		scene.add( buildingRRight );
+		
+	// roadObject
+		let geometryRO = new THREE.BoxBufferGeometry( 1, 1, 1);
+		let materiaRO = new THREE.MeshBasicMaterial({color: "yellow"});
+		roadObject = new THREE.Mesh( geometryRO, materiaRO );
+		roadObject.position.set(0, -25, 0);
+		scene.add( roadObject );
+		
+}		
+
+function animate() 
+{
+    requestAnimationFrame( animate );
+	render();		
+	update();
+}
+
+function update()
+{
+	var relativeCameraOffset = new THREE.Vector3(0, -3, 2);
+
+	var cameraOffset = relativeCameraOffset.applyMatrix4( roadObject.matrixWorld );
+
+	tpCamera.position.x = cameraOffset.x;
+	tpCamera.position.y = cameraOffset.y;
+	tpCamera.position.z = cameraOffset.z;
+	
+	buildingCamera1.lookAt( roadObject.position );
+	buildingCamera2.lookAt( roadObject.position );
+	tpCamera.lookAt( roadObject.position );
+	
+	// Switches
+	if ( keyboard.pressed("1") )
+	{	
+		buildingCamera1Active = true;
+		chaseCamera2Active = false;
+		tpCameraActive = false;
+	}
+	if ( keyboard.pressed("2") )
+	{  
+		buildingCamera1Active = false;
+		buildingCamera2Active = false;
+		tpCameraActive = false;
+	}
+	if ( keyboard.pressed("3") )
+	{	
+		buildingCamera1Active = false;
+		buildingCamera2Active = true;
+		tpCameraActive = false;
+	}
+	if ( keyboard.pressed("4") )
+	{	
+		buildingCamera1Active = false;
+		buildingCamera2Active = false;
+		tpCameraActive = true;
+	}
+	
+
+}
+    function render()  
+	 {
+		// Moving of roadObject
+		if (y > 24) 
+		{
+			speed = -0.15;
+		}
+		if (y < -23) 
+		{
+			speed = 0.15;
+		}
+		y = y + speed;
+		roadObject.position.y = y; 
+		
+
+		
+		if (buildingCamera1Active)
+		{	renderer.render( scene, buildingCamera1 );  }
+		else if (buildingCamera2Active)
+		{	renderer.render( scene, buildingCamera2 );  }
+		else if (tpCameraActive)
+		{	renderer.render( scene, tpCamera );	}
+		else 
+		{	renderer.render( scene, CameraMain );  }
+	
+      };
+    </script>
+  </body>
+</html>
+
+

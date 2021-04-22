@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Сlock</title>
+	<meta charset="utf-8">
+</head>
+	<body>
+		<script src="../js/build/Three.js"></script>
+		<!-- <script src="../js/build/OrbitControls.js"></script> -->
+		<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+		<script>
+
+	//	[Scene]
+    var scene = new THREE.Scene();
+	scene.background = new THREE.Color( "black" );
+	
+	//	[Main camera]
+	var camera = new THREE.PerspectiveCamera(71, window.innerWidth / window.innerHeight, 1, 10000);
+	scene.add(camera);
+	
+	
+	//	[Renderer]
+	var renderer = new THREE.WebGLRenderer({antialias: true});
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.domElement);
+	
+	
+	//	[OrbitControls]
+	<!-- var orbitControls = new THREE.OrbitControls(camera, renderer.domElement); -->
+
+	
+	//	[Lights]
+    var ambientLight = new THREE.AmbientLight(0xf1f1f1);
+    scene.add(ambientLight);
+
+	var spotLight = new THREE.DirectionalLight("white", 0.45);
+	spotLight.position.set(15, 50, 50);
+    scene.add(spotLight);
+	
+
+	//	[Сlock]
+	var geometry_dial = new THREE.CylinderBufferGeometry(20, 21, 4, 48, 1, false);
+	var material_dial = new THREE.MeshStandardMaterial({color: 0xe0e0d1});
+	var dial      	  = new THREE.Mesh(geometry_dial, material_dial);
+
+	var geometry_mark = new THREE.BoxBufferGeometry(5, 2, 1);
+	geometry_mark.applyMatrix( new THREE.Matrix4().makeTranslation(18,0,0));
+	var material_mark = new THREE.MeshStandardMaterial({color: 0x123453});
+	var mark      	  = new THREE.Mesh(geometry_mark, material_mark);
+
+	var geometry_second = new THREE.BoxBufferGeometry(16, 1, 1);
+	geometry_second.applyMatrix( new THREE.Matrix4().makeTranslation(8,0,0)); 	// сдвиг от центра
+	var material_second = new THREE.MeshStandardMaterial({color: 0xFF0000});
+	var second   	    = new THREE.Mesh(geometry_second, material_second);
+
+	var geometry_minute = new THREE.BoxBufferGeometry(12, 1, 2.5);
+	geometry_minute.applyMatrix( new THREE.Matrix4().makeTranslation(6,0,0));
+	var material_minute = new THREE.MeshStandardMaterial({color: 0x8585e0});
+	var minute   	    = new THREE.Mesh(geometry_minute, material_minute);
+
+	var geometry_hour = new THREE.BoxBufferGeometry(10, 1, 2.7);
+	geometry_hour.applyMatrix( new THREE.Matrix4().makeTranslation(5,0,0));
+	var material_hour = new THREE.MeshStandardMaterial({color: 0x1f1f7a});
+	var hour      	  = new THREE.Mesh(geometry_hour, material_hour);
+
+	
+	// группа, в нее добавлю все обьекты (корпус, стрелки) чтобы их "склеить" и потом удобно вращать
+	var ClockGroup = new THREE.Group();
+	
+	
+	// Positions
+	dial.position.x   = 0;
+	dial.position.y   = -3;
+	dial.position.z   = 0;
+	
+	mark.position.x   = 0;
+	mark.position.y   = -1.5;
+	mark.position.z   = 0;
+	
+	second.position.x = 0;
+	second.position.y = 0;
+	second.position.z = 0;
+
+	minute.position.x = 0;
+	minute.position.y = 1;
+	minute.position.z = 0;
+
+	hour.position.x   = 0;
+	hour.position.y   = 2;
+	hour.position.z   = 0;
+
+
+	camera.position.z = 40;
+	camera.position.y = 40;
+	camera.lookAt(dial.position);
+
+
+	// Build World
+	ClockGroup.add( dial );
+	ClockGroup.add( mark );
+	ClockGroup.add( second );
+	ClockGroup.add( minute );
+	ClockGroup.add( hour );
+	scene.add( ClockGroup );
+	
+	ClockGroup.rotation.x = 1;
+	ClockGroup.rotation.y = 1.56;
+
+
+	
+	
+
+function update()
+{	
+	// Set initial time
+	var now = new Date();
+	hour.rotation.y   = -((Math.PI * 2) * (now.getHours()   / 12.0))
+	minute.rotation.y = -((Math.PI * 2) * (now.getMinutes() / 60.0))
+	second.rotation.y = -((Math.PI * 2) * (now.getSeconds() / 60.0))
+}
+
+
+function animate() 
+{
+    requestAnimationFrame( animate );
+	render();	
+	update();
+}
+
+
+function render()  
+{
+	renderer.render( scene, camera );  
+};
+animate();
+
+    </script>
+  </body>
+</html>

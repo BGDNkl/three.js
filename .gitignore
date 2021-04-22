@@ -1,0 +1,17 @@
+# ignoring models...
+*.3ds
+*.bin
+*.blend
+*.blend1
+*.dae
+*.fbx
+*.gltf
+
+# ...sounds...
+*.mp3
+
+# ...and pics
+*.gif
+*.jpeg
+*.jpg
+*.png

@@ -1,0 +1,178 @@
+<!--------------------------------------------------
+ !	
+ !	Light and shadow
+ !
+ !------------------------------------------------->
+<!doctype html>
+<html lang="en">
+<head>
+    <title>building and sun</title>
+	<meta charset="utf-8">
+	</head>
+	<body>
+		<script src="../js/build/Three.js"></script>
+		<script src="../js/build/Detector.js"></script>
+		<script src="../js/build/Stats.js"></script>
+		<script src="../js/build/OrbitControls.js"></script>
+		<script src="../js/build/THREEx.KeyboardState.js"></script>
+		<script src="../js/build/OBJLoader.js"></script>
+		<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+		<script>
+	
+	// Scene
+    var scene = new THREE.Scene();
+	
+	//Background 
+	//scene.background = THREE.ImageUtils.loadTexture( 'lesson7_background1.jpg' ); 					// узкий
+
+	
+	// SkyBox Sphere
+	var geometrySB = new THREE.SphereGeometry(100, 50, 50);												// "background";
+    var materialSB = new THREE.MeshBasicMaterial({
+		map: new THREE.ImageUtils.loadTexture("dayCloudyMod.jpg"),
+		// map: new THREE.ImageUtils.loadTexture("dayCloudyMod.jpg""lesson7_sphere_background.jpg"), 	// dla shaurmy  
+        side: THREE.BackSide
+      });
+    var sphere = new THREE.Mesh(geometrySB, materialSB);
+	sphere.position.z = 37;
+	sphere.rotation.x = 1.5;
+	sphere.rotation.y = 1;
+	// sphere.rotation.x = 1.7;				// dla shaurmy 
+	// sphere.rotation.y = 2.41; 			// dla shaurmy 
+	sphere.rotation.z = 0.0;
+    scene.add(sphere);
+	sphere.castShadow = false;				// shadow
+	sphere.receiveShadow = false;			// shadow
+
+	
+	// Camera 
+	var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000); 
+    scene.add(camera);
+    camera.position.set(0, -27, 2.5);
+	camera.lookAt(scene.position);
+	
+	
+	// Renderer
+	var renderer = new THREE.WebGLRenderer();
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.domElement);
+	
+	
+	// Orbits
+	var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+	orbitControls.minDistance = 6; 			// limit min distance of the scroll camera;
+    orbitControls.maxDistance = 75;			// limit max distance of the scroll camera;
+	
+	
+	// Objects:
+	// [plane] 
+	// var geometryP = new THREE.PlaneBufferGeometry( 50, 45, 1, 1 ); 
+	// var materialP = new THREE.MeshPhongMaterial({map: new THREE.ImageUtils.loadTexture("lesson7_plane.jpg"), side: THREE.DoubleSide});
+	// var plane = new THREE.Mesh( geometryP, materialP ); 
+	// plane.castShadow = false;			// shadow 
+	// plane.receiveShadow = true;			// shadow 
+	// plane.receive = true;				// shadow 
+  	// scene.add( plane ); 
+	
+	var geometryP = new THREE.BoxBufferGeometry( 50, 50, 0.1 );
+	var materialP = new THREE.MeshPhongMaterial({map: new THREE.ImageUtils.loadTexture("lesson7_plane.jpg"), side: THREE.DoubleSide});
+	var plane = new THREE.Mesh( geometryP, materialP );
+	plane.castShadow = false;			// shadow
+	plane.receiveShadow = false;		// shadow
+	plane.receive = true;				// shadow
+  	scene.add( plane );
+	
+	// [bulding]
+	var materials = [
+       new THREE.MeshPhongMaterial({
+           map: THREE.ImageUtils.loadTexture('lesson7_building_prawyBok.jpg')
+       }),
+       new THREE.MeshPhongMaterial({
+           map: THREE.ImageUtils.loadTexture('lesson7_building_levyBok.jpg')
+       }),
+       new THREE.MeshPhongMaterial({
+           map: THREE.ImageUtils.loadTexture('lesson7_building_spina.jpg')
+       }),
+       new THREE.MeshPhongMaterial({
+           map: THREE.ImageUtils.loadTexture('lesson7_building_pered.jpg')
+       }),
+       new THREE.MeshPhongMaterial({
+           map: THREE.ImageUtils.loadTexture('lesson7_building_krisha.jpg')
+       }),
+       new THREE.MeshBasicMaterial({
+           map: THREE.ImageUtils.loadTexture('')
+       })
+    ];
+	var building = new THREE.Mesh( new THREE.BoxBufferGeometry( 14, 7, 8, 1, 1, 1), materials );
+	building.castShadow = true;			// shadow
+	building.receiveShadow = true;		// shadow
+	building.receive = true;			// shadow
+	plane.position.set(0, 0, -4.01);
+	scene.add(building);
+
+	
+	// Lights
+    var ambientLight = new THREE.AmbientLight("white");
+    scene.add(ambientLight);
+	
+	// var spotLight = new THREE.DirectionalLight("white"); 
+    // spotLight.position.set(41 ,41, 41); 
+    // scene.add(spotLight); 
+
+	
+	// Shadow
+//	renderer.shadowMapEnabled = true;
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
+
+	// Sun and Light
+	var sunGroup = new THREE.Group();
+	
+	var sunPointLight = new THREE.SpotLight( "yellow", 14 , 100);
+	sunPointLight.position.set(0, 0, 0); 
+	sunPointLight.castShadow = true;
+//	sunPointLight.target = building;
+//	sunPointLight.shadow = new THREE.LightShadow(new THREE.PerspectiveCamera(100, 1, 1000, 1000));
+	sunPointLight.shadowCameraNear = 0.2;
+	sunPointLight.shadowCameraFar = 25;
+	sunPointLight.shadowDarkness = 0.5;
+	
+    var sunGeometry = new THREE.SphereGeometry(2.5, 50, 50);
+//	var sunMaterial = new THREE.MeshPhongMaterial({ color: "yellow"/*, emissive : "yellow"*/ });					// yellow sun
+	var sunMaterial = new THREE.MeshPhongMaterial({ map: THREE.ImageUtils.loadTexture('Ram_sun.jpg')});				// textured sun
+	var sunLight = new THREE.Mesh(sunGeometry, sunMaterial);
+	sunLight.position.set(0, 0, 0);
+	sunLight.rotation.x = 1.5; 			// down - up
+	sunLight.rotation.y = -1.2;			// left - right
+//	sunLight.rotation.z = -1.5; 		// backward - forward
+
+	sunGroup.add (sunPointLight);
+	sunGroup.add (sunLight);
+	scene.add(sunGroup);  
+
+
+	// Sun rotation parameters
+	var re = 45;
+	var thetae = 0;
+    var dThetae = -2 * Math.PI / 150;
+	
+
+	function animate() 
+	{
+		requestAnimationFrame( animate );	
+		render();
+		renderer.render( scene, camera );		
+	}
+
+	function render()  
+	{
+		thetae += dThetae;
+		sunGroup.position.x = re * Math.cos(thetae);
+		sunGroup.position.z = re * Math.sin(thetae);	
+		// sphere.rotateY(-0.0009); -->	
+	};
+
+	animate();
+    </script>
+  </body>
+</html>

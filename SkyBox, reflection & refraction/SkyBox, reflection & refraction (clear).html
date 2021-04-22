@@ -1,0 +1,274 @@
+<!-----------------------------------------------------------------------------------
+	Computer Graphic 
+ 	Theme: SkyBox, reflection and refraction 
+ ------------------------------------------------------------------------------------>
+<!doctype html>
+<html lang="en">
+<head>
+    <title>SkyBox, reflection & refraction</title>
+	<meta charset="utf-8">
+	</head>
+	<body>
+		<script src="../js/build/Three.js"></script>
+		<script src="../js/build/OrbitControls.js"></script>
+		<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+		<script>
+
+//-----[Scene]---------------------------------------------------------------------------------------------------------------------------------------
+    var scene = new THREE.Scene();
+	
+	
+//-----[Camera]--------------------------------------------------------------------------------------------------------------------------------------
+	var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2700); 
+    scene.add(camera);
+    camera.position.set(0, 125, 200);
+	camera.lookAt(scene.position);
+
+
+//-----[Renderer]------------------------------------------------------------------------------------------------------------------------------------
+	var renderer = new THREE.WebGLRenderer();
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.domElement);
+	
+	
+//-----[Orbits]--------------------------------------------------------------------------------------------------------------------------------------
+	var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+	orbitControls.minDistance = 91; 										//  limit min distance of the scroll camera;
+	orbitControls.maxDistance = 900;										//  limit max distance of the scroll camera;
+	
+
+//-----[Objects: ]-----------------------------------------------------------------------------------------------------------------------------------
+
+//-----[SkyBox]--------------------------------------------------------------------------------------------------------------------------------------
+	var geometrySB = new THREE.CubeGeometry(2000, 2000, 2000);
+	var materialsSB = 
+	[
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_rt.png"), side: THREE.DoubleSide}), // px
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_lf.png"), side: THREE.DoubleSide}), // nx
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_up.png"), side: THREE.DoubleSide}), // py
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_dn.png"), side: THREE.DoubleSide}), // ny
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_bk.png"), side: THREE.DoubleSide}), // nz
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skyboxie/asbestos-gorge_ft.png"), side: THREE.DoubleSide})  // pz
+	];
+	var materialSB = new THREE.MeshFaceMaterial(materialsSB);
+	var Cube = new THREE.Mesh(geometrySB, materialSB);
+	scene.add(Cube);
+
+//-----[mirror: ]------------------------------------------------------------------------------------------------------------------------------------
+//----[CubeCamera and mirrorCubeCamera]--------------------------------------------------------------------------------------------
+	var cubeGeom = new THREE.CubeGeometry(75, 75, 75, 1, 1, 1);
+	var mirrorCubeCamera = new THREE.CubeCamera( 0.1, 5000, 512 );
+	mirrorCubeCamera.renderTarget.minFilter = THREE.LinearMipMapLinearFilter;
+	scene.add( mirrorCubeCamera );
+	var mirrorCubeMaterial = new THREE.MeshBasicMaterial( { envMap: mirrorCubeCamera.renderTarget } );
+	var mirrorCube = new THREE.Mesh( cubeGeom, mirrorCubeMaterial );
+	mirrorCube.position.set(0, -80, 0);
+	mirrorCubeCamera.position = mirrorCube.position;
+	scene.add(mirrorCube);	
+
+//----[SphereCamera and mirrorSphereCamera]----------------------------------------------------------------------------------------
+	var sphereGeom =  new THREE.SphereGeometry( 50, 48, 48 ); 				// radius, segmentsWidth, segmentsHeight
+	mirrorSphereCamera = new THREE.CubeCamera( 0.1, 5000, 512 );
+	mirrorSphereCamera.renderTarget.minFilter = THREE.LinearMipMapLinearFilter;
+	scene.add( mirrorSphereCamera );
+	var mirrorSphereMaterial = new THREE.MeshBasicMaterial( { envMap: mirrorSphereCamera.renderTarget } );
+	mirrorSphere = new THREE.Mesh( sphereGeom, mirrorSphereMaterial );
+	mirrorSphere.position.set(0, 130, 0);
+	mirrorSphereCamera.position = mirrorSphere.position;
+	scene.add(mirrorSphere);
+
+
+//-----[Torus1]------------------------------------------------------------------------------------------------------
+	var geometryT1 = new THREE.TorusBufferGeometry( 65, 3, 16, 100 );
+	var materialT1 = new THREE.MeshStandardMaterial( { color: 0x4FFF1B } );
+	var torusT1 = new THREE.Mesh( geometryT1, materialT1 );
+	torusT1.position.y = 130;
+	scene.add( torusT1 );
+	
+//-----[Torus2]------------------------------------------------------------------------------------------------------
+	var geometryT2 = new THREE.TorusBufferGeometry( 71, 3, 16, 100 );
+	var materialT2 = new THREE.MeshStandardMaterial( { color: "blue" } );
+	var torusT2 = new THREE.Mesh( geometryT2, materialT2 );
+	torusT2.position.y = 130;
+	torusT2.rotation.y = 0;
+	scene.add( torusT2 );
+	
+//-----[Torus3]------------------------------------------------------------------------------------------------------
+	var geometryT3 = new THREE.TorusBufferGeometry( 76, 3, 16, 100 );
+	var materialT3 = new THREE.MeshBasicMaterial( { color: 0xFFE800 } );
+	var torusT3 = new THREE.Mesh( geometryT3, materialT3 );
+	torusT3.position.y = 130;
+	torusT3.rotation.z = 1.5;
+	scene.add( torusT3 );
+	
+	
+//-----[Lights]----------------------------------------------------------------------------------------------
+	//(Освещение сцены)
+    var ambientLight = new THREE.AmbientLight("white", 1);
+    scene.add(ambientLight);
+	
+	
+	<!-- //(Освещение, чтобы улучшить вид сцены) -->
+	<!-- var spotLight = new THREE.DirectionalLight("white"); -->
+    <!-- spotLight.position.set(0, 0, 0);  // -right; -up; -back; -->
+    <!-- scene.add(spotLight); -->
+
+
+//-----yellow light------------------------------------------------------------------------------------------
+    var light0Geometry = new THREE.SphereGeometry(6.8, 50, 50);
+	var light0Material = new THREE.MeshBasicMaterial({ color: "yellow" });		
+	var light0Light = new THREE.Mesh(light0Geometry, light0Material);
+
+	light0Light.rotation.x = 1.5; 											// down - up
+	light0Light.rotation.y = -1.2;											// tilt left - right
+	light0Light.rotation.z = 0; 											// backward - forward
+
+	light0Light.position.set(0, -170, 0);
+	scene.add(light0Light); 
+//-----------------------------------------------------------------------------------------------------------
+
+//-----blue light--------------------------------------------------------------------------------------------	
+	var light1Geometry = new THREE.SphereGeometry(6.8, 15, 15);
+	var light1Material = new THREE.MeshBasicMaterial({ color: "blue"});
+	<!-- var light1Material = new THREE.MeshStandardMaterial({ color: "blue", -->
+														  <!-- // metalness: 1, -->
+														  <!-- // roughness: 0, -->
+														  <!-- // flatShading: true, -->
+														  <!-- // emissive : "blue" -->
+														 <!-- });		 -->
+	var light1Light = new THREE.Mesh(light1Geometry, light1Material);
+
+	light1Light.position.set(0, 10, 0);
+	scene.add(light1Light);  
+//-----------------------------------------------------------------------------------------------------------	
+
+//-----red light---------------------------------------------------------------------------------------------	
+	var light2Geometry = new THREE.SphereGeometry(6.8, 15, 15);
+	var light2Material = new THREE.MeshPhongMaterial({ color: "red" });					
+	var light2Light = new THREE.Mesh(light2Geometry, light2Material);
+	
+	light2Light.position.set(0, -80, 90);
+	scene.add(light2Light); 
+//-----------------------------------------------------------------------------------------------------------
+	
+//-----green light-------------------------------------------------------------------------------------------
+	var light3Geometry = new THREE.SphereGeometry(6.8, 15, 15);
+	var light3Material = new THREE.MeshLambertMaterial({ color: "green" });	
+	var light3Light = new THREE.Mesh(light3Geometry, light3Material);
+
+	light3Light.position.set(0, -80, -90);
+	scene.add(light3Light); 
+//-----------------------------------------------------------------------------------------------------------
+
+//-----[refraction: ]----------------------------------------------------------------------------------------
+	var LupaGroup = new THREE.Group();
+	
+	var circleGeom = new THREE.CircleBufferGeometry( 87, 32 );
+	var refractSphereCamera = new THREE.CubeCamera( 0.1, 5000, 512 );
+	scene.add( refractSphereCamera );
+	
+	<!-- refractSphereCamera.renderTarget.mapping = new THREE.CubeRefractionMapping(); -->
+	
+	var refractMaterial = new THREE.MeshBasicMaterial( { 
+		color: 0xccccff, 
+		envMap: refractSphereCamera.renderTarget, 
+		refractionRatio: 0.985, 
+		reflectivity: 0.9 
+		} );			
+		
+	var refractSphere = new THREE.Mesh( circleGeom, refractMaterial );
+	refractSphere.position.set(0, 198, 250);
+	refractSphereCamera.position = refractSphere.position;
+
+	
+	var geometryLupa1 = new THREE.TorusBufferGeometry( 89, 3, 16, 100 );
+	var materialLupa1 = new THREE.MeshBasicMaterial( { color: "black" } );
+	var Lupa1 = new THREE.Mesh( geometryLupa1, materialLupa1 );
+	Lupa1.position.set(0, 198, 250);
+
+	
+	var geometryLupa2 = new THREE.CylinderBufferGeometry( 3.5, 6.4, 175, 32, 35 );
+	var materialLupa2 = new THREE.MeshBasicMaterial( {color: "black"} );
+	var Lupa2 = new THREE.Mesh( geometryLupa2, materialLupa2 );
+	Lupa2.position.set(0, 22, 250);
+
+	
+	LupaGroup.add(refractSphere);
+	LupaGroup.add(Lupa1);
+	LupaGroup.add(Lupa2);
+	LupaGroup.position.set(0, 150, 411);
+	LupaGroup.rotation.x = -1.04;
+	LupaGroup.rotation.y = 0;
+	LupaGroup.rotation.z = 0;
+	scene.add(LupaGroup);
+//-----------------------------------------------------------------------------------------------------------
+	
+	// initial variables used for rotation parameters
+	var r = 105;
+	var thetaa = 0;
+	var thetab = 3.1;
+	var thetac = 0;
+	var thetad = 3.1;
+    var dTheta = -2 * Math.PI / 150;
+	
+	animate();
+
+
+function animate()
+{
+	requestAnimationFrame( animate );
+	render();
+}
+
+
+function render() 
+{
+
+	// variables for sphere movement
+	thetaa += dTheta;
+	thetab += dTheta;
+	thetac += dTheta;
+	thetad += dTheta;
+	
+	light0Light.position.x = r * Math.cos(thetac);
+	light0Light.position.y = -57 + r * Math.sin(thetac);
+	
+	light1Light.position.x = r * Math.cos(thetad);
+	light1Light.position.y = -57 + r * Math.sin(thetad);
+	
+	light2Light.position.x = r * Math.cos(thetab);
+	light2Light.position.z = r * Math.sin(thetab);
+	
+	light3Light.position.x = r * Math.cos(thetaa);
+	light3Light.position.z = r * Math.sin(thetaa);
+	
+	
+	// rotation of the toruses
+	torusT1.rotateX(0.08);
+	torusT2.rotateY(-0.09);
+	torusT3.rotateY(0.09);
+	
+	// mirror cube
+	mirrorCube.visible = false;
+	mirrorCubeCamera.updateCubeMap( renderer, scene );
+	<!-- mirrorCubeCamera.update( renderer, scene ); -->
+	mirrorCube.visible = true;
+
+	// mirror sphere
+	mirrorSphere.visible = false;
+	mirrorSphereCamera.updateCubeMap( renderer, scene );
+	mirrorSphere.visible = true;
+	
+	// refraction
+	refractSphere.visible = false;
+	refractSphereCamera.updateCubeMap( renderer, scene );
+	refractSphere.visible = true;
+
+
+	renderer.render( scene, camera );
+	
+}
+	
+    </script>
+  </body>
+</html>

@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>"glass" bottle</title>
+	<meta charset="utf-8">
+</head>
+	<body>
+		<script src="../js/build/Three.js"></script>
+		<script src="../js/build/OrbitControls.js"></script>
+		<!-- <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div> -->
+		<script>
+
+//-----[Scene]---------------------------------------------------------------------------------------------------------------------------------------
+    var scene = new THREE.Scene();
+	
+	
+//-----[Camera]--------------------------------------------------------------------------------------------------------------------------------------
+	var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 4700); 
+    scene.add(camera);
+    camera.position.set(0, 125, 200);
+	camera.lookAt(scene.position);
+
+
+//-----[Renderer]------------------------------------------------------------------------------------------------------------------------------------
+	var renderer = new THREE.WebGLRenderer();
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.domElement);
+	
+	
+//-----[Orbits]--------------------------------------------------------------------------------------------------------------------------------------
+	var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+	orbitControls.minDistance = 91; 										//  limit min distance of the scroll camera;
+	orbitControls.maxDistance = 1500;										//  limit max distance of the scroll camera;
+	
+
+//-----[Objects: ]-----------------------------------------------------------------------------------------------------------------------------------
+
+//-----[SkyBox]--------------------------------------------------------------------------------------------------------------------------------------
+	var geometrySB = new THREE.CubeGeometry(4000, 4000, 4000);
+	var materialsSB = 
+	[
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/rt.png"), side: THREE.BackSide}), // px
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/lf.png"), side: THREE.BackSide}), // nx
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/up.png"), side: THREE.BackSide}), // py
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/dn.png"), side: THREE.BackSide}), // ny
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/bk.png"), side: THREE.BackSide}), // nz
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/ft.png"), side: THREE.BackSide})  // pz
+	];
+	var Cube = new THREE.Mesh(geometrySB, materialsSB);
+	scene.add(Cube);
+
+	
+//-----[Lights]----------------------------------------------------------------------------------------------
+	//ambient light:
+    var ambientLight = new THREE.AmbientLight("white", 1);
+    scene.add(ambientLight);
+	
+
+	// point light:
+	var light1Group = new THREE.Group();
+	
+	var spotLight = new THREE.PointLight("white", 0.8);
+ 
+ 	var light1Geometry = new THREE.SphereGeometry(7.5, 15, 15);	
+	var light1Material = new THREE.MeshBasicMaterial({ color: "white"});		
+	var light1Light = new THREE.Mesh(light1Geometry, light1Material);
+	
+	light1Group.add (spotLight);
+	light1Group.add (light1Light);
+	scene.add(light1Group);  
+	light1Group.position.set(0, 0, 250);
+ 
+//-----[Objects]----------------------------------------------------------------------------------------------
+	
+	
+	// obj1
+	var refractSphereCamera = new THREE.CubeCamera( 0.1, 5000, 512 );
+	scene.add( refractSphereCamera );
+	
+	var geometry1 = new THREE.CylinderBufferGeometry( 35, 35, 105, 32, 32 );
+	var material1 = new THREE.MeshBasicMaterial( { 
+		color: "green", 
+		envMap: refractSphereCamera.renderTarget, 
+		refractionRatio: 0.985, 
+		reflectivity: 0.9 
+		} );		
+	var cylinder1 = new THREE.Mesh( geometry1, material1 );
+	cylinder1.position.y = -39.5;
+	scene.add( cylinder1 );
+	refractSphereCamera.position = cylinder1.position;
+
+	// obj1_1	
+	var geometry1_1 = new THREE.TorusBufferGeometry( 32, 3.1, 14, 100 );
+	var material1_1 = new THREE.MeshBasicMaterial( { 
+		color: "green", 
+		envMap: refractSphereCamera.renderTarget, 
+		refractionRatio: 0.985, 
+		reflectivity: 0.9 
+		} );
+	var torus1_1 = new THREE.Mesh( geometry1_1, material1_1 );
+	torus1_1.position.y = 13.5;
+	torus1_1.rotation.x = 1.562;
+	scene.add( torus1_1 );
+
+	// obj2
+	var geometry2 = new THREE.CylinderBufferGeometry( 14, 35, 52, 32, 32 );
+	var material2 = new THREE.MeshBasicMaterial( { 
+		color: "green", 
+		envMap: refractSphereCamera.renderTarget, 
+		refractionRatio: 0.985, 
+		reflectivity: 0.9 
+		} );	
+	var cylinder2 = new THREE.Mesh( geometry2, material2 );
+	cylinder2.position.y = 40.5;
+	scene.add( cylinder2 );
+	
+	<!-- var geometry3 = new THREE.CylinderBufferGeometry( 17, 24, 15, 32, 32 ); -->
+	<!-- var material3 = new THREE.MeshBasicMaterial( {  -->
+		<!-- color: "green",  -->
+		<!-- envMap: refractSphereCamera.renderTarget,  -->
+		<!-- refractionRatio: 0.985,  -->
+		<!-- reflectivity: 0.9  -->
+		<!-- } );	 -->
+	<!-- var cylinder3 = new THREE.Mesh( geometry3, material3 ); -->
+	<!-- cylinder3.position.y = 47; -->
+	<!-- scene.add( cylinder3 ); -->
+
+	<!-- // obj4 -->
+	<!-- var geometry4 = new THREE.CylinderBufferGeometry( 14, 17, 10, 32, 32 ); -->
+	<!-- var material4 = new THREE.MeshBasicMaterial( {  -->
+		<!-- color: "green",  -->
+		<!-- envMap: refractSphereCamera.renderTarget,  -->
+		<!-- refractionRatio: 0.985,  -->
+		<!-- reflectivity: 0.9  -->
+		<!-- } );	 -->
+	<!-- var cylinder4 = new THREE.Mesh( geometry4, material4 ); -->
+	<!-- cylinder4.position.y = 58; -->
+	<!-- scene.add( cylinder4 );	 -->
+	
+	// obj5
+	var geometry5 = new THREE.CylinderBufferGeometry( 8, 14, 65, 32, 32 );
+	/*var material5 = new THREE.MeshStandardMaterial({
+		color: "gold",
+		roughness: 0,
+		metalness: 0.5
+		});	*/
+	var material5 = new THREE.MeshBasicMaterial( { 
+		color: "gold", 
+		envMap: refractSphereCamera.renderTarget, 
+		refractionRatio: 0.985, 
+		reflectivity: 0.1 
+		} );
+	var cylinder5 = new THREE.Mesh( geometry5, material5 );
+	cylinder5.position.y = 95;
+	scene.add( cylinder5 );
+	
+	//niz torus
+	var geometry6 = new THREE.TorusBufferGeometry( 30, 5, 35, 100 );
+	var material6 = new THREE.MeshBasicMaterial( { 
+		color: "green", 
+		envMap: refractSphereCamera.renderTarget, 
+		refractionRatio: 0.985, 
+		reflectivity: 0.9 
+		} );
+	var torus6 = new THREE.Mesh( geometry6, material6 );
+	torus6.position.y = -93;
+	torus6.rotation.x = 1.562;
+	scene.add( torus6 );	
+	
+	//gorlovina1
+	var geometry7 = new THREE.TorusBufferGeometry( 7, 2, 14, 100 );
+	var material7 = new THREE.MeshBasicMaterial( { 
+		color: "green", 
+		envMap: refractSphereCamera.renderTarget, 
+		refractionRatio: 0.985, 
+		reflectivity: 0.9 
+		} );	
+	var torus7 = new THREE.Mesh( geometry7, material7 );
+	torus7.position.y = 127;
+	torus7.rotation.x = 1.562;
+	scene.add( torus7 );	
+	
+	//gorlovina2
+	var geometry8 = new THREE.CylinderBufferGeometry( 9, 9, 12, 32, 32 );
+	var material8 = new THREE.MeshBasicMaterial( { 
+		color: "green", 
+		envMap: refractSphereCamera.renderTarget, 
+		refractionRatio: 0.985, 
+		reflectivity: 0.9 
+		} );	
+	var cylinder8 = new THREE.Mesh( geometry8, material8 );
+	cylinder8.position.y = 134;
+	scene.add( cylinder8 );
+	
+	//gorlovina3
+	var geometry7 = new THREE.TorusBufferGeometry( 8, 1, 14, 100 );
+	var material7 = new THREE.MeshBasicMaterial( { 
+		color: "green", 
+		envMap: refractSphereCamera.renderTarget, 
+		refractionRatio: 0.985, 
+		reflectivity: 0.9 
+		} );
+	var torus7 = new THREE.Mesh( geometry7, material7 );
+	torus7.position.y = 139.5;
+	torus7.rotation.x = 1.562;
+	scene.add( torus7 );
+	
+	
+	animate();
+
+
+function animate()
+{
+	requestAnimationFrame( animate );
+	render();
+}
+
+
+function render() 
+{
+	// refraction
+	cylinder1.visible = false;
+	refractSphereCamera.updateCubeMap( renderer, scene );
+	cylinder1.visible = true;
+
+	renderer.render( scene, camera );
+	
+}
+	
+    </script>
+  </body>
+</html>

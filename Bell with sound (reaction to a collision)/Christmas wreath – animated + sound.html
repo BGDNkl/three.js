@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Bell with sound (reaction to a collision)</title>
+	<meta charset="utf-8">
+</head>
+	<body>
+		<script src="../js/build/Three.js"></script>
+		<script src="../js/build/OrbitControls.js"></script>
+		<!-- <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div> -->
+		<script>
+
+//-----[Scene]---------------------------------------------------------------------------------------------------------------------------------------
+    var scene = new THREE.Scene();
+	
+	
+//-----[Camera]--------------------------------------------------------------------------------------------------------------------------------------
+	var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 5000); 
+    scene.add(camera);
+    camera.position.set(0, 125, 200);
+	camera.lookAt(scene.position);
+
+
+//-----[Renderer]------------------------------------------------------------------------------------------------------------------------------------
+	var renderer = new THREE.WebGLRenderer();
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.domElement);
+	
+
+//----------- sound ----------------------------------------------------------
+	//create an AudioListener and add it to the camera
+	var listener = new THREE.AudioListener();
+	camera.add( listener );	
+	// create a global audio source
+	var sound = new THREE.Audio( listener );
+	// load a sound and set it as the Audio object's buffer
+	var audioLoader = new THREE.AudioLoader();
+	audioLoader.load( 'bell.mp3', function( buffer ) 
+	{
+		sound.setBuffer( buffer );
+		sound.setLoop( true );
+		sound.setVolume( 0.5 );
+		sound.play();
+	});
+
+//-----[Orbits]--------------------------------------------------------------------------------------------------------------------------------------
+	var orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+	orbitControls.minDistance = 91; 										//  limit min distance of the scroll camera;
+	orbitControls.maxDistance = 1500;										//  limit max distance of the scroll camera;
+	
+
+//-----[Objects: ]-----------------------------------------------------------------------------------------------------------------------------------
+
+//-----[SkyBox]--------------------------------------------------------------------------------------------------------------------------------------
+	var geometrySB = new THREE.CubeGeometry(4000, 4000, 4000);
+	var materialsSB = 
+	[
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/rt.png"), side: THREE.BackSide}), // px
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/lf.png"), side: THREE.BackSide}), // nx
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/up.png"), side: THREE.BackSide}), // py
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/dn.png"), side: THREE.BackSide}), // ny
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/bk.png"), side: THREE.BackSide}), // nz
+		new THREE.MeshPhongMaterial( {map: new THREE.TextureLoader().load("skybox/ft.png"), side: THREE.BackSide})  // pz
+	];
+	var Cube = new THREE.Mesh(geometrySB, materialsSB);
+	scene.add(Cube);
+
+	
+//-----[Lights]----------------------------------------------------------------------------------------------
+	//ambient light:
+    var ambientLight = new THREE.AmbientLight("white", 0.8);
+    scene.add(ambientLight);
+	
+
+	// point light:
+	var light1Group = new THREE.Group();
+	
+	var spotLight = new THREE.PointLight("white", 0.5);
+ 
+ 	var light1Geometry = new THREE.SphereGeometry(7.5, 15, 15);	
+	var light1Material = new THREE.MeshBasicMaterial({ color: "white"});		
+	var light1Light = new THREE.Mesh(light1Geometry, light1Material);
+	
+	light1Group.add (spotLight);
+	light1Group.add (light1Light);
+	scene.add(light1Group);  
+	light1Group.position.set(0, 0, 250);
+ 
+//-----[Objects]----------------------------------------------------------------------------------------------
+
+	// torus
+	var torusGeometry = new THREE.TorusGeometry(100, 25, 100, 100);
+	var torusMaterial = new THREE.MeshLambertMaterial({
+        map: new THREE.ImageUtils.loadTexture("tree.jpg") }); 
+	var torus = new THREE.Mesh (torusGeometry, torusMaterial);
+	scene.add(torus);
+	
+	//bell:
+	// 1
+	var bell_1Geometry = new THREE.ConeBufferGeometry( 21, 17, 32 );
+	var bell_1Material = new THREE.MeshStandardMaterial({
+		color: "gold",
+		roughness: 0,
+		metalness: 0.5
+		});
+	var bell_1 = new THREE.Mesh( bell_1Geometry, bell_1Material );
+	bell_1.position.y = 67;
+	scene.add( bell_1 );
+
+	// 2
+	var bell_2Geometry = new THREE.CylinderBufferGeometry( 21, 25, 30, 32 );
+	var bell_2Material = new THREE.MeshStandardMaterial({
+		color: "gold",
+		roughness: 0,
+		metalness: 0.5
+		});
+	var bell_2 = new THREE.Mesh( bell_2Geometry, bell_2Material );
+	bell_2.position.y = 43.5;
+	scene.add( bell_2 );
+
+	// 3
+	var bell_3Geometry = new THREE.TorusBufferGeometry( 26, 3, 16, 100 );;
+	var bell_3Material = new THREE.MeshStandardMaterial({
+		color: "gold",
+		roughness: 0,
+		metalness: 0.5
+		});
+	var bell_3 = new THREE.Mesh( bell_3Geometry, bell_3Material );
+	bell_3.rotation.x = 1.6;
+	bell_3.position.y = 26.5;
+	scene.add( bell_3 );
+
+	// 4
+	var group = new THREE.Group();
+	
+	var bell_4Geometry = new THREE.CylinderBufferGeometry( 2, 2, 8);
+	var bell_4Material = new THREE.MeshStandardMaterial({
+		color: "black",
+		roughness: 0,
+		metalness: 0.5
+		});	
+	var bell_4 = new THREE.Mesh( bell_4Geometry, bell_4Material );
+	bell_4.position.y = 25;
+//	scene.add( bell_4 );
+	
+	// 5
+	var bell_5Geometry = new THREE.SphereGeometry(7.5, 15, 15);	
+	var bell_5Material = new THREE.MeshStandardMaterial({
+		color: "black",
+		roughness: 0,
+		metalness: 0.5
+		});		
+	var bell_5 = new THREE.Mesh(bell_5Geometry, bell_5Material);
+	bell_5.position.set(0, 21, 0);
+//	scene.add(bell_5);
+	group.add(bell_4);
+	group.add(bell_5);
+	scene.add(group);
+	
+	
+	// spheres
+	var sphere1Geometry = new THREE.SphereGeometry(7.5, 15, 15);	
+	var sphere1Material = new THREE.MeshPhongMaterial({ color: "red"});		
+	var sphere1 = new THREE.Mesh(sphere1Geometry, sphere1Material);
+	sphere1.position.set(-85, 41, 30);
+	scene.add(sphere1);
+	
+	var sphere2Geometry = new THREE.SphereGeometry(7.5, 15, 15);	
+	var sphere2Material = new THREE.MeshPhongMaterial({ color: "blue"});		
+	var sphere2 = new THREE.Mesh(sphere2Geometry, sphere2Material);
+	sphere2.position.set(85, 41, 30);
+	scene.add(sphere2);
+	
+	var sphere3Geometry = new THREE.SphereGeometry(7.5, 15, 15);	
+	var sphere3Material = new THREE.MeshPhongMaterial({ color: "white"});		
+	var sphere3 = new THREE.Mesh(sphere3Geometry, sphere3Material);
+	sphere3.position.set(-85, -41, 30);
+	scene.add(sphere3);
+	
+	var sphere4Geometry = new THREE.SphereGeometry(7.5, 15, 15);	
+	var sphere4Material = new THREE.MeshPhongMaterial({ color: "orange"});		
+	var sphere4 = new THREE.Mesh(sphere4Geometry, sphere4Material);
+	sphere4.position.set(85, -41, 30);
+	scene.add(sphere4);
+	
+	
+	
+	// rotation parameters
+	var r = 18;
+	var theta = 0;
+    var dTheta = -2 * Math.PI / 291;
+	
+	animate();
+
+
+	
+function animate()
+{
+	requestAnimationFrame( animate );
+	render();
+}
+
+
+function render() 
+{
+	theta += dTheta;
+
+	group.position.x = r * Math.cos(theta);
+	
+	renderer.render( scene, camera );
+	
+}
+	
+    </script>
+  </body>
+</html>
